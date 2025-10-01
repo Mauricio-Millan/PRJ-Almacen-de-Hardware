@@ -1,11 +1,11 @@
-package org.example.prj_rest_control_almacen_hardware.Service;
+package org.example.prj_rest_control_almacen_hardware.Service.impl;
 
 import org.example.prj_rest_control_almacen_hardware.Model.Usuario_Entity;
 import org.example.prj_rest_control_almacen_hardware.Repository.Usuario_Repository;
+import org.example.prj_rest_control_almacen_hardware.Service.Usuario_Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 
