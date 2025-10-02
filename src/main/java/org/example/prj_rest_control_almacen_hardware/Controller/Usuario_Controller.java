@@ -31,4 +31,8 @@ private Usuario_Service usuario_Repo;
     public Optional<Usuario_Entity> update(@PathVariable Long id ,@RequestBody Usuario_Entity usuario_Entity) {
         return  usuario_Repo.update(id, usuario_Entity);
     }
+    @DeleteMapping("{id}")
+    public String deleteById(@PathVariable Long id) {
+        return usuario_Repo.deleteById(id);
+    }
 }

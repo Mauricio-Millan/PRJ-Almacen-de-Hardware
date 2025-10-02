@@ -1,15 +1,14 @@
 package org.example.prj_rest_control_almacen_hardware.Model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
-import java.time.LocalDate;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.time.Instant;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "Compra", schema = "dbo")
 public class Compra_Entity {
@@ -18,23 +17,23 @@ public class Compra_Entity {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @Column(name = "fecha")
+    private Instant fecha;
+
+    @ColumnDefault("1")
+    @Column(name = "estado")
+    private Boolean estado;
+
+    @ManyToOne
     @JoinColumn(name = "id_usuario")
     private Usuario_Entity idUsuario;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "id_movimiento")
     private Movimiento_Entity idMovimiento;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "id_proveedor")
     private Proveedor_Entity idProveedor;
-
-    @Column(name = "fecha")
-    private LocalDate fecha;
-
-    @OneToMany
-    @JoinColumn(name = "id_compra")
-    private Set<Lote_Entity> lotes = new LinkedHashSet<>();
 
 }

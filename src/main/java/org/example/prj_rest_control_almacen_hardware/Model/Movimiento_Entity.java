@@ -1,15 +1,17 @@
 package org.example.prj_rest_control_almacen_hardware.Model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.hibernate.annotations.Nationalized;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.Date;
 
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Data
 @Entity
 @Table(name = "Movimiento", schema = "dbo")
@@ -19,38 +21,35 @@ public class Movimiento_Entity {
     @Column(name = "id", nullable = false)
     private Integer id;
 
+    @NotNull
     @Column(name = "fecha", nullable = false)
     private Instant fecha;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_usuario", nullable = false)
-    private Usuario_Entity idUsuario;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_tipo_accion", nullable = false)
-    private TipoAccion_Entity idTipoAccion;
-
-    @Nationalized
+    @Size(max = 255)
     @Column(name = "referencia")
     private String referencia;
 
-    @Nationalized
+    @Size(max = 255)
     @Column(name = "comentario")
     private String comentario;
 
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    @NotNull
+    @ColumnDefault("getdate()")
+    @Column(name = "created_at", nullable = false,columnDefinition = "datetime")
+    private Date createdAt;
 
-    @OneToMany
-    @JoinColumn(name = "id_movimiento")
-    private Set<Compra_Entity> compras = new LinkedHashSet<>();
+    @ColumnDefault("1")
+    @Column(name = "estado")
+    private Boolean estado;
 
-    @OneToMany
-    @JoinColumn(name = "id_movimiento")
-    private Set<MovimientoLinea_Entity> movimientoLineas = new LinkedHashSet<>();
+    @NotNull
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "id_usuario", nullable = false)
+    private Usuario_Entity idUsuario;
 
-    @OneToMany
-    @JoinColumn(name = "id_movimiento")
-    private Set<Venta_Entity> ventas = new LinkedHashSet<>();
+    @NotNull
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "id_tipo_accion", nullable = false)
+    private TipoAccion idTipoAccion;
 
 }

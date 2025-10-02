@@ -3,14 +3,14 @@ package org.example.prj_rest_control_almacen_hardware.Model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Data
+@Getter
+@Setter
 @Entity
-@Table(name = "TipoAccion", schema = "dbo")
-public class TipoAccion_Entity {
+@Table(name = "\"TipoAccion\"", schema = "dbo")
+public class TipoAccion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)

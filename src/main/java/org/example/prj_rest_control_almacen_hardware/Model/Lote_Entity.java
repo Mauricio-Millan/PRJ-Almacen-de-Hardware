@@ -1,15 +1,15 @@
 package org.example.prj_rest_control_almacen_hardware.Model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Data
 @Entity
 @Table(name = "Lote", schema = "dbo")
@@ -19,16 +19,14 @@ public class Lote_Entity {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_producto", nullable = false)
-    private Producto_Entity idProducto;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @NotNull
+    @ManyToOne(optional = false)
     @JoinColumn(name = "id_compra", nullable = false)
     private Compra_Entity idCompra;
 
-    @Column(name = "cantidad")
-    private String cantidad;
+    @NotNull
+    @Column(name = "cantidad", nullable = false)
+    private Integer cantidad;
 
     @Column(name = "precio_unit", precision = 18)
     private BigDecimal precioUnit;
@@ -36,12 +34,13 @@ public class Lote_Entity {
     @Column(name = "fecha_expiracion")
     private LocalDate fechaExpiracion;
 
-    @OneToMany
-    @JoinColumn(name = "id_lote")
-    private Set<ContenidoAlmacen_Entity> contenidoAlmacens = new LinkedHashSet<>();
+    @ColumnDefault("1")
+    @Column(name = "estado")
+    private Boolean estado;
 
-    @OneToMany
-    @JoinColumn(name = "id_lote")
-    private Set<MovimientoLinea_Entity> movimientoLineas = new LinkedHashSet<>();
+    @NotNull
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "id_producto", nullable = false)
+    private Producto_Entity idProducto;
 
 }

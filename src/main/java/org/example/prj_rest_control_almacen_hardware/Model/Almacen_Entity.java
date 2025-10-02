@@ -1,15 +1,12 @@
 package org.example.prj_rest_control_almacen_hardware.Model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.hibernate.annotations.Nationalized;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
-
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Data
 @Entity
 @Table(name = "Almacen", schema = "dbo")
@@ -19,24 +16,17 @@ public class Almacen_Entity {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Nationalized
+    @Size(max = 255)
+    @NotNull
     @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Nationalized
+    @Size(max = 255)
     @Column(name = "direccion")
     private String direccion;
 
-    @Nationalized
-    @Column(name = "telefono")
+    @Size(max = 13)
+    @Column(name = "telefono", length = 13)
     private String telefono;
-
-    @OneToMany
-    @JoinColumn(name = "id_almacen")
-    private Set<ContenidoAlmacen_Entity> contenidoAlmacens = new LinkedHashSet<>();
-
-    @OneToMany
-    @JoinColumn(name = "id_almacen_origen")
-    private Set<MovimientoLinea_Entity> movimientoLineas = new LinkedHashSet<>();
 
 }
