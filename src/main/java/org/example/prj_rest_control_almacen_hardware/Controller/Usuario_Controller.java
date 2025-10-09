@@ -13,26 +13,31 @@ import java.util.Optional;
 @RequestMapping("/usuarios")
 public class Usuario_Controller {
     @Autowired
-private Usuario_Service usuario_Repo;
+    private Usuario_Service usuario_serv;
 
     @GetMapping
     public List<Usuario_Entity> findAll() {
-        return usuario_Repo.findAll();
+        return usuario_serv.findAll();
     }
-    @GetMapping("{id}")
-    public Optional<Usuario_Entity> findById(Long id) {
-        return usuario_Repo.findById(id);
+
+    @GetMapping("/{id}")
+    public Optional<Usuario_Entity> findById(@PathVariable Long id) {
+        return usuario_serv.findById(id);
     }
+
     @PostMapping
     public Usuario_Entity save(@RequestBody Usuario_Entity usuario_Entity) {
-        return usuario_Repo.save(usuario_Entity);
+        usuario_Entity.setId(null);
+        return usuario_serv.save(usuario_Entity);
     }
-    @PutMapping("{id}")
-    public Optional<Usuario_Entity> update(@PathVariable Long id ,@RequestBody Usuario_Entity usuario_Entity) {
-        return  usuario_Repo.update(id, usuario_Entity);
+
+    @PutMapping("/{id}")
+    public Optional<Usuario_Entity> update(@PathVariable Long id, @RequestBody Usuario_Entity usuario_Entity) {
+        return usuario_serv.update(id, usuario_Entity);
     }
-    @DeleteMapping("{id}")
+
+    @DeleteMapping("/{id}")
     public String deleteById(@PathVariable Long id) {
-        return usuario_Repo.deleteById(id);
+        return usuario_serv.deleteById(id);
     }
 }

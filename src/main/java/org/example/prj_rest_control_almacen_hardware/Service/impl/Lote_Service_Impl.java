@@ -36,11 +36,12 @@ public class Lote_Service_Impl implements Lote_Service {
 
         if (loteExistente.isPresent()) {
             Lote_Entity loteActualizado = loteExistente.get();
-            loteActualizado.setIdProducto(lote.getIdProducto());
             loteActualizado.setIdCompra(lote.getIdCompra());
             loteActualizado.setCantidad(lote.getCantidad());
             loteActualizado.setPrecioUnit(lote.getPrecioUnit());
             loteActualizado.setFechaExpiracion(lote.getFechaExpiracion());
+            loteActualizado.setEstado(lote.getEstado());
+            loteActualizado.setIdProducto(lote.getIdProducto());
 
             return Optional.of(lote_Repository.save(loteActualizado));
         }
@@ -50,5 +51,15 @@ public class Lote_Service_Impl implements Lote_Service {
     @Override
     public Optional<Lote_Entity> findById(Long id) {
         return lote_Repository.findById(id);
+    }
+
+    @Override
+    public List<Lote_Entity> findByIdCompraId(Long idCompra) {
+        return lote_Repository.findByIdCompraId(idCompra);
+    }
+
+    @Override
+    public List<Lote_Entity> findByIdProductoId(Long idProducto) {
+        return lote_Repository.findByIdProductoId(idProducto);
     }
 }

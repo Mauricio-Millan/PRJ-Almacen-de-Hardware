@@ -36,10 +36,11 @@ public class Compra_Service_Impl implements Compra_Service {
 
         if (compraExistente.isPresent()) {
             Compra_Entity compraActualizada = compraExistente.get();
+            compraActualizada.setFecha(compra.getFecha());
+            compraActualizada.setEstado(compra.getEstado());
             compraActualizada.setIdUsuario(compra.getIdUsuario());
             compraActualizada.setIdMovimiento(compra.getIdMovimiento());
             compraActualizada.setIdProveedor(compra.getIdProveedor());
-            compraActualizada.setFecha(compra.getFecha());
 
             return Optional.of(compra_Repository.save(compraActualizada));
         }
@@ -49,5 +50,15 @@ public class Compra_Service_Impl implements Compra_Service {
     @Override
     public Optional<Compra_Entity> findById(Long id) {
         return compra_Repository.findById(id);
+    }
+
+    @Override
+    public List<Compra_Entity> findByIdUsuarioId(Long idUsuario) {
+        return compra_Repository.findByIdUsuarioId(idUsuario);
+    }
+
+    @Override
+    public List<Compra_Entity> findByIdProveedorId(Long idProveedor) {
+        return compra_Repository.findByIdProveedorId(idProveedor);
     }
 }

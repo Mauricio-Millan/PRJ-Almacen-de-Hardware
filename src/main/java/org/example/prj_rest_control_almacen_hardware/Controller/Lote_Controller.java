@@ -4,7 +4,6 @@ import org.example.prj_rest_control_almacen_hardware.Model.Lote_Entity;
 import org.example.prj_rest_control_almacen_hardware.Service.Lote_Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -24,8 +23,19 @@ public class Lote_Controller {
         return lote_Service.findById(id);
     }
 
+    @GetMapping("/compra/{idCompra}")
+    public List<Lote_Entity> findByIdCompra(@PathVariable Long idCompra) {
+        return lote_Service.findByIdCompraId(idCompra);
+    }
+
+    @GetMapping("/producto/{idProducto}")
+    public List<Lote_Entity> findByIdProducto(@PathVariable Long idProducto) {
+        return lote_Service.findByIdProductoId(idProducto);
+    }
+
     @PostMapping
     public Lote_Entity save(@RequestBody Lote_Entity lote) {
+        lote.setId(null);
         return lote_Service.save(lote);
     }
 
@@ -39,3 +49,4 @@ public class Lote_Controller {
         return lote_Service.deleteById(id);
     }
 }
+

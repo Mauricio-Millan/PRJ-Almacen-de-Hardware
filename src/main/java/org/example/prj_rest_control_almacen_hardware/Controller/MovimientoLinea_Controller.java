@@ -26,6 +26,7 @@ public class MovimientoLinea_Controller {
 
     @PostMapping
     public MovimientoLinea_Entity save(@RequestBody MovimientoLinea_Entity movimientoLinea) {
+        movimientoLinea.setId(null);
         return movimientoLinea_Service.save(movimientoLinea);
     }
 

@@ -8,6 +8,8 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDate;
 
+
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
@@ -16,7 +18,6 @@ import java.time.LocalDate;
 public class Usuario_Entity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Integer id;
 
     @Size(max = 255)

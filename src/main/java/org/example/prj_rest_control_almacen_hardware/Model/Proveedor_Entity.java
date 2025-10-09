@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
@@ -13,7 +14,6 @@ import org.hibernate.annotations.ColumnDefault;
 public class Proveedor_Entity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Integer id;
 
     @Size(max = 255)

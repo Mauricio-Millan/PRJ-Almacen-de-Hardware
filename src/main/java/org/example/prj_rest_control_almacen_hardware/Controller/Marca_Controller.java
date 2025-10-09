@@ -31,9 +31,9 @@ public class Marca_Controller {
 
     @PostMapping
     public Marca_Entity save(@RequestBody Marca_Entity marca) {
+        marca.setId(null);
         return marca_Service.save(marca);
     }
-
     @PutMapping("/{id}")
     public Optional<Marca_Entity> update(@PathVariable Long id, @RequestBody Marca_Entity marca) {
         return marca_Service.update(id, marca);
@@ -44,3 +44,4 @@ public class Marca_Controller {
         return marca_Service.deleteById(id);
     }
 }
+

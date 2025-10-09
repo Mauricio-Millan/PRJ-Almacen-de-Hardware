@@ -4,7 +4,6 @@ import org.example.prj_rest_control_almacen_hardware.Model.Compra_Entity;
 import org.example.prj_rest_control_almacen_hardware.Service.Compra_Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -24,8 +23,19 @@ public class Compra_Controller {
         return compra_Service.findById(id);
     }
 
+    @GetMapping("/usuario/{idUsuario}")
+    public List<Compra_Entity> findByIdUsuario(@PathVariable Long idUsuario) {
+        return compra_Service.findByIdUsuarioId(idUsuario);
+    }
+
+    @GetMapping("/proveedor/{idProveedor}")
+    public List<Compra_Entity> findByIdProveedor(@PathVariable Long idProveedor) {
+        return compra_Service.findByIdProveedorId(idProveedor);
+    }
+
     @PostMapping
     public Compra_Entity save(@RequestBody Compra_Entity compra) {
+        compra.setId(null);
         return compra_Service.save(compra);
     }
 
@@ -39,3 +49,4 @@ public class Compra_Controller {
         return compra_Service.deleteById(id);
     }
 }
+

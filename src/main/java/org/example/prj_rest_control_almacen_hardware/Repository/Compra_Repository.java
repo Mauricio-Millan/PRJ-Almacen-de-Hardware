@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface Compra_Repository extends JpaRepository<Compra_Entity, Long> {
     List<Compra_Entity> findAll();
     Optional<Compra_Entity> findById(Long id);
+    List<Compra_Entity> findByIdUsuarioId(Long idUsuario);
+    List<Compra_Entity> findByIdProveedorId(Long idProveedor);
 }

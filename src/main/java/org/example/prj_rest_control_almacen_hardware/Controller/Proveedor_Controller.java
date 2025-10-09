@@ -31,6 +31,7 @@ public class Proveedor_Controller {
 
     @PostMapping
     public Proveedor_Entity save(@RequestBody Proveedor_Entity proveedor) {
+        proveedor.setId(null);
         return proveedor_Service.save(proveedor);
     }
 

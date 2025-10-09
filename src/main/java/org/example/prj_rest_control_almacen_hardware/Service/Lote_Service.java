@@ -1,5 +1,6 @@
 package org.example.prj_rest_control_almacen_hardware.Service;
 
+
 import org.example.prj_rest_control_almacen_hardware.Model.Lote_Entity;
 
 import java.util.List;
@@ -13,4 +14,6 @@ public interface Lote_Service {
     Optional<Lote_Entity> update(Long id, Lote_Entity lote);
     //Métodos específicos
     Optional<Lote_Entity> findById(Long id);
+    List<Lote_Entity> findByIdCompraId(Long idCompra);
+    List<Lote_Entity> findByIdProductoId(Long idProducto);
 }

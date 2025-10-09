@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface Lote_Repository extends JpaRepository<Lote_Entity, Long> {
     List<Lote_Entity> findAll();
     Optional<Lote_Entity> findById(Long id);
+    List<Lote_Entity> findByIdCompraId(Long idCompra);
+    List<Lote_Entity> findByIdProductoId(Long idProducto);
 }
