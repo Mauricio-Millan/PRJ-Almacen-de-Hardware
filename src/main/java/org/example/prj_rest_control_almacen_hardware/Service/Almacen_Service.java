@@ -1,5 +1,6 @@
 package org.example.prj_rest_control_almacen_hardware.Service;
 
+import org.example.prj_rest_control_almacen_hardware.DTOs.ConsultaAlmacenDetalladoDTO;
 import org.example.prj_rest_control_almacen_hardware.Model.Almacen_Entity;
 
 import java.util.List;
@@ -14,4 +15,6 @@ public interface Almacen_Service {
     //Métodos específicos
     Optional<Almacen_Entity> findById(Long id);
     Optional<Almacen_Entity> findByNombre(String nombre);
+    //Procedimiento almacenado
+    ConsultaAlmacenDetalladoDTO obtenerContenidoDetallado(Integer idAlmacen, String nombreProducto);
 }

@@ -1,11 +1,15 @@
 package org.example.prj_rest_control_almacen_hardware.Controller;
 
 
+import org.example.prj_rest_control_almacen_hardware.DTOs.LineaTiempoUsuarioDTO;
 import org.example.prj_rest_control_almacen_hardware.Model.Usuario_Entity;
 import org.example.prj_rest_control_almacen_hardware.Service.Usuario_Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,5 +43,17 @@ public class Usuario_Controller {
     @DeleteMapping("/{id}")
     public String deleteById(@PathVariable Long id) {
         return usuario_serv.deleteById(id);
+    }
+
+    @GetMapping("/{id}/linea-tiempo")
+    public ResponseEntity<LineaTiempoUsuarioDTO> obtenerLineaTiempoUsuario(
+            @PathVariable Integer id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaHasta,
+            @RequestParam(required = false) Integer idTipoAccion) {
+
+        LineaTiempoUsuarioDTO resultado = usuario_serv.obtenerLineaTiempoUsuario(id, fechaDesde, fechaHasta, idTipoAccion);
+
+        return ResponseEntity.ok(resultado);
     }
 }

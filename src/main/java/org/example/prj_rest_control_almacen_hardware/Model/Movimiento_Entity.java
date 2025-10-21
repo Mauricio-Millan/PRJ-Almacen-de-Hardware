@@ -50,6 +50,6 @@ public class Movimiento_Entity {
     @NotNull
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_tipo_accion", nullable = false)
-    private TipoAccion idTipoAccion;
+    private TipoAccion_Entity idTipoAccion;
 
 }

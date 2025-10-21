@@ -1,8 +1,10 @@
 package org.example.prj_rest_control_almacen_hardware.Controller;
 
+import org.example.prj_rest_control_almacen_hardware.DTOs.ConsultaAlmacenDetalladoDTO;
 import org.example.prj_rest_control_almacen_hardware.Model.Almacen_Entity;
 import org.example.prj_rest_control_almacen_hardware.Service.Almacen_Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,5 +45,16 @@ public class Almacen_Controller {
     @DeleteMapping("/{id}")
     public String deleteById(@PathVariable Long id) {
         return almacen_Service.deleteById(id);
+    }
+
+    @GetMapping("/{id}/detalle")
+    public ResponseEntity<ConsultaAlmacenDetalladoDTO> obtenerContenidoDetallado(
+            @PathVariable Integer id,
+            @RequestParam(required = false) String nombreProducto) {
+
+        ConsultaAlmacenDetalladoDTO resultado =
+            almacen_Service.obtenerContenidoDetallado(id, nombreProducto);
+
+        return ResponseEntity.ok(resultado);
     }
 }

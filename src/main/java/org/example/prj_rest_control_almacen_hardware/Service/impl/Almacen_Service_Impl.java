@@ -1,7 +1,9 @@
 package org.example.prj_rest_control_almacen_hardware.Service.impl;
 
+import org.example.prj_rest_control_almacen_hardware.DTOs.ConsultaAlmacenDetalladoDTO;
 import org.example.prj_rest_control_almacen_hardware.Model.Almacen_Entity;
 import org.example.prj_rest_control_almacen_hardware.Repository.Almacen_Repository;
+import org.example.prj_rest_control_almacen_hardware.Repository.AlmacenCustomRepository;
 import org.example.prj_rest_control_almacen_hardware.Service.Almacen_Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,9 @@ import java.util.Optional;
 public class Almacen_Service_Impl implements Almacen_Service {
     @Autowired
     private Almacen_Repository almacen_Repository;
+
+    @Autowired
+    private AlmacenCustomRepository almacenCustomRepository;
 
     @Override
     public List<Almacen_Entity> findAll() {
@@ -53,5 +58,10 @@ public class Almacen_Service_Impl implements Almacen_Service {
     @Override
     public Optional<Almacen_Entity> findByNombre(String nombre) {
         return almacen_Repository.findByNombre(nombre);
+    }
+
+    @Override
+    public ConsultaAlmacenDetalladoDTO obtenerContenidoDetallado(Integer idAlmacen, String nombreProducto) {
+        return almacenCustomRepository.consultarContenidoDetallado(idAlmacen, nombreProducto);
     }
 }

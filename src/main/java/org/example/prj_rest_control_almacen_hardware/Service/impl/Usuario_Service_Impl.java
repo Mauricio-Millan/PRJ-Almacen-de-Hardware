@@ -1,11 +1,14 @@
 package org.example.prj_rest_control_almacen_hardware.Service.impl;
 
+import org.example.prj_rest_control_almacen_hardware.DTOs.LineaTiempoUsuarioDTO;
 import org.example.prj_rest_control_almacen_hardware.Model.Usuario_Entity;
 import org.example.prj_rest_control_almacen_hardware.Repository.Usuario_Repository;
+import org.example.prj_rest_control_almacen_hardware.Repository.UsuarioCustomRepository;
 import org.example.prj_rest_control_almacen_hardware.Service.Usuario_Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +16,9 @@ import java.util.Optional;
 public class Usuario_Service_Impl  implements Usuario_Service {
     @Autowired
     private Usuario_Repository usuario_repo;
+
+    @Autowired
+    private UsuarioCustomRepository usuarioCustomRepository;
 
     @Override
 public List<Usuario_Entity> findAll() {
@@ -56,5 +62,10 @@ public List<Usuario_Entity> findAll() {
     @Override
     public Optional<Usuario_Entity> Login(Usuario_Entity usuario) {
         return usuario_repo.login(usuario.getDni(),usuario.getClave());
+    }
+
+    @Override
+    public LineaTiempoUsuarioDTO obtenerLineaTiempoUsuario(Integer idUsuario, LocalDateTime fechaDesde, LocalDateTime fechaHasta, Integer idTipoAccion) {
+        return usuarioCustomRepository.obtenerLineaTiempoUsuario(idUsuario, fechaDesde, fechaHasta, idTipoAccion);
     }
 }
