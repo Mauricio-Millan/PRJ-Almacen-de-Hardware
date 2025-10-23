@@ -1,19 +1,21 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { Almacen } from '../../core/models/almacen';
 import { Almacenes } from '../../core/services/almacenes';
-import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-almacenes',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './almacenes.html',
   styleUrls: ['./almacenes.scss'],
 })
 export class AlmacenesComponent implements OnInit {
   almacenes: Almacen[] = [];
+  filteredAlmacenes: Almacen[] = [];
+
   almacenForm!: FormGroup;
   selectedAlmacen: Almacen | null = null;
   isEditMode = false;
@@ -22,97 +24,133 @@ export class AlmacenesComponent implements OnInit {
   showModal = false;
   showDeleteModal = false;
 
+  searchTerm = '';
+
+  // 🔹 Paginación
+  currentPage = 1;
+  itemsPerPage = 7;
+
   constructor(private almacenesService: Almacenes, private fb: FormBuilder) {}
 
   ngOnInit(): void {
-    this.initForm();
     this.loadAlmacenes();
+    this.initForm();
   }
 
+  /** Inicializa el formulario con validaciones */
   private initForm(): void {
     this.almacenForm = this.fb.group({
-      nombre: ['', Validators.required],
+      nombre: ['', [Validators.required, Validators.minLength(3)]],
       direccion: [''],
-      telefono: ['', [Validators.pattern(/^[0-9]{6,13}$/)]],
+      telefono: [
+        '',
+        [
+          Validators.pattern(/^\d*$/), // Solo números
+          Validators.maxLength(9), // Máximo 9 dígitos
+        ],
+      ],
     });
   }
 
-  get nombre() { return this.almacenForm.get('nombre'); }
-  get telefono() { return this.almacenForm.get('telefono'); }
-
+  /** Carga lista completa de almacenes */
   loadAlmacenes(): void {
     this.almacenesService.getAlmacenes().subscribe({
-      next: data => this.almacenes = data,
-      error: err => console.error('Error al cargar almacenes:', err)
+      next: (data) => {
+        this.almacenes = data;
+        this.applyFilter();
+      },
+      error: (err) => console.error('Error al cargar almacenes:', err),
     });
   }
 
-  private setForm(almacen?: Almacen) {
-    this.almacenForm.reset();
-    if (almacen) this.almacenForm.patchValue(almacen);
+  /** Filtro de búsqueda */
+  applyFilter(): void {
+    const term = this.searchTerm.toLowerCase();
+    this.filteredAlmacenes = this.almacenes.filter(
+      (a) =>
+        a.nombre.toLowerCase().includes(term) ||
+        (a.direccion && a.direccion.toLowerCase().includes(term)) ||
+        (a.telefono && a.telefono.toLowerCase().includes(term))
+    );
+    this.currentPage = 1;
   }
 
-  openCreateModal() {
-    this.isEditMode = false;
-    this.selectedAlmacen = null;
-    this.setForm();
+  /** Paginación */
+  get paginatedAlmacenes(): Almacen[] {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    return this.filteredAlmacenes.slice(start, start + this.itemsPerPage);
+  }
+
+  get totalPages(): number[] {
+    return Array.from({ length: Math.ceil(this.filteredAlmacenes.length / this.itemsPerPage) }, (_, i) => i + 1);
+  }
+
+  changePage(page: number): void {
+    this.currentPage = page;
+  }
+
+  /** Abrir modal de crear/editar */
+  openModal(almacen?: Almacen): void {
+    if (almacen) {
+      this.isEditMode = true;
+      this.selectedAlmacen = { ...almacen };
+      this.almacenForm.patchValue(almacen);
+    } else {
+      this.isEditMode = false;
+      this.selectedAlmacen = null;
+      this.almacenForm.reset();
+    }
     this.showModal = true;
   }
 
-  openEditModal(almacen: Almacen) {
-    this.isEditMode = true;
-    this.selectedAlmacen = { ...almacen };
-    this.setForm(almacen);
-    this.showModal = true;
-  }
-
-  closeModal() {
+  /** Cerrar modal */
+  closeModal(): void {
     this.showModal = false;
     this.selectedAlmacen = null;
     this.almacenForm.reset();
   }
 
-  saveAlmacen() {
-    if (this.almacenForm.invalid) return;
+  /** Crear o editar almacén */
+  saveAlmacen(): void {
+    if (this.almacenForm.invalid) {
+      this.almacenForm.markAllAsTouched();
+      return;
+    }
 
-    const obs: Observable<any> = this.isEditMode && this.selectedAlmacen?.id
-      ? this.almacenesService.updateAlmacen(this.selectedAlmacen.id, this.almacenForm.value)
-      : this.almacenesService.createAlmacen(this.almacenForm.value);
+    const almacenData: Almacen = this.almacenForm.value;
+    this.loading = true;
 
-    this.runWithLoading(obs, () => {
-      this.loadAlmacenes();
-      this.closeModal();
+    const request$ =
+      this.isEditMode && this.selectedAlmacen?.id
+        ? this.almacenesService.updateAlmacen(this.selectedAlmacen.id, almacenData)
+        : this.almacenesService.createAlmacen(almacenData);
+
+    request$.subscribe({
+      next: () => {
+        this.loadAlmacenes();
+        this.closeModal();
+      },
+      error: (err) => console.error('Error al guardar almacén:', err),
+      complete: () => (this.loading = false),
     });
   }
 
-  openDeleteModal(almacen: Almacen) {
-    this.selectedAlmacen = almacen;
-    this.showDeleteModal = true;
+  /** Modales eliminar */
+  toggleDeleteModal(almacen?: Almacen): void {
+    this.selectedAlmacen = almacen ?? null;
+    this.showDeleteModal = !!almacen;
   }
 
-  closeDeleteModal() {
-    this.showDeleteModal = false;
-    this.selectedAlmacen = null;
-  }
-
-  deleteAlmacenConfirmed() {
+  /** Eliminar almacén directamente */
+  deleteAlmacenConfirmed(): void {
     if (!this.selectedAlmacen) return;
 
-    this.runWithLoading(
-      this.almacenesService.deleteAlmacen(this.selectedAlmacen.id!),
-      () => {
+    this.almacenesService.deleteAlmacen(this.selectedAlmacen.id!).subscribe({
+      next: () => {
         this.loadAlmacenes();
-        this.closeDeleteModal();
-      }
-    );
-  }
-
-  private runWithLoading(obs: Observable<any>, callback?: () => void) {
-    this.loading = true;
-    obs.subscribe({
-      next: () => callback?.(),
-      error: err => console.error(err),
-      complete: () => this.loading = false
+        this.toggleDeleteModal();
+      },
+      error: (err) => console.error('Error al eliminar almacén:', err),
     });
   }
 }

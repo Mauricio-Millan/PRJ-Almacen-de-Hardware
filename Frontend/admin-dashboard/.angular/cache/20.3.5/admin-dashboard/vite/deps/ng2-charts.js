@@ -2,7 +2,7 @@ import {
   Chart,
   defaults,
   registerables
-} from "./chunk-4DINU4QF.js";
+} from "./chunk-H6GR2RGS.js";
 import {
   BehaviorSubject,
   Directive,
@@ -21,7 +21,7 @@ import {
   ɵɵdefineDirective,
   ɵɵdefineInjectable,
   ɵɵdirectiveInject
-} from "./chunk-4PGL2QSG.js";
+} from "./chunk-LVHWZ222.js";
 import "./chunk-WDMUDEB6.js";
 
 // node_modules/lodash-es/_freeGlobal.js

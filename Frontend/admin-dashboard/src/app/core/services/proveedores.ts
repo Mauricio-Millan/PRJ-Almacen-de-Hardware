@@ -5,7 +5,7 @@ import { Proveedor } from '../models/proveedor';
 import { environment } from '../../../environments/enviroment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class Proveedores {
   private baseUrl = `${environment.apiUrl}/proveedores`;
@@ -30,5 +30,9 @@ export class Proveedores {
 
   deleteProveedor(id: number): Observable<string> {
     return this.http.delete(`${this.baseUrl}/${id}`, { responseType: 'text' });
+  }
+
+  updateEstado(id: number, estado: string): Observable<Proveedor> {
+    return this.http.put<Proveedor>(`${this.baseUrl}/${id}`, { estado });
   }
 }

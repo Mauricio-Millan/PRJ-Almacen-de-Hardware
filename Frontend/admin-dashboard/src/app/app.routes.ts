@@ -3,6 +3,7 @@ import { AdminLayoutComponent } from './layout/admin-layout/admin-layout';
 import { DashboardComponent } from './pages/dashboard/dashboard';
 import { AlmacenesComponent } from './pages/almacenes/almacenes';
 import { ProveedoresComponent } from './pages/proveedores/proveedores';
+import { UsuariosComponent } from './pages/usuarios/usuarios';
 
 export const routes: Routes = [
   {
@@ -12,6 +13,7 @@ export const routes: Routes = [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'almacenes', component: AlmacenesComponent},
       { path: 'proveedores', component: ProveedoresComponent },
+      { path: 'usuarios', component: UsuariosComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' } // Redirige a dashboard por defecto
     ]
   },

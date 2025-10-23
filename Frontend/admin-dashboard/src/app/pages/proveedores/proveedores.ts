@@ -1,18 +1,21 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { Proveedor } from '../../core/models/proveedor';
 import { Proveedores } from '../../core/services/proveedores';
 
 @Component({
   selector: 'app-proveedores',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './proveedores.html',
   styleUrls: ['./proveedores.scss'],
 })
 export class ProveedoresComponent implements OnInit {
   proveedores: Proveedor[] = [];
+  filteredProveedores: Proveedor[] = [];
+
   proveedorForm!: FormGroup;
   selectedProveedor: Proveedor | null = null;
   isEditMode = false;
@@ -20,6 +23,13 @@ export class ProveedoresComponent implements OnInit {
 
   showModal = false;
   showDeleteModal = false;
+  showRestoreModal = false;
+
+  searchTerm = '';
+
+  // 🔹 Paginación
+  currentPage = 1;
+  itemsPerPage = 5;
 
   constructor(private proveedoresService: Proveedores, private fb: FormBuilder) {}
 
@@ -28,25 +38,66 @@ export class ProveedoresComponent implements OnInit {
     this.initForm();
   }
 
-  /** Inicializa el formulario */
+  /** Inicializa el formulario con validaciones */
   private initForm(): void {
     this.proveedorForm = this.fb.group({
-      nombre: ['', Validators.required],
-      ruc: ['', Validators.required],
-      telefono: [''],
+      nombre: ['', [Validators.required, Validators.minLength(3)]],
+      ruc: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^\d{11}$/), // Solo números y 11 dígitos exactos
+        ],
+      ],
+      telefono: [
+        '',
+        [
+          Validators.pattern(/^\d*$/), // Solo números
+          Validators.maxLength(9), // Máximo 9 dígitos
+        ],
+      ],
       estado: [true],
     });
   }
 
-  /** Carga la lista de proveedores */
+  /** Carga lista completa de proveedores */
   loadProveedores(): void {
     this.proveedoresService.getProveedores().subscribe({
-      next: (data) => (this.proveedores = data),
+      next: (data) => {
+        this.proveedores = data;
+        this.applyFilter();
+      },
       error: (err) => console.error('Error al cargar proveedores:', err),
     });
   }
 
-  /** Abre modal de creación o edición */
+  /** Filtro de búsqueda */
+  applyFilter(): void {
+    const term = this.searchTerm.toLowerCase();
+    this.filteredProveedores = this.proveedores.filter(
+      (p) =>
+        p.nombre.toLowerCase().includes(term) ||
+        p.ruc.toLowerCase().includes(term) ||
+        (p.telefono && p.telefono.toLowerCase().includes(term))
+    );
+    this.currentPage = 1;
+  }
+
+  /** Paginación */
+  get paginatedProveedores(): Proveedor[] {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    return this.filteredProveedores.slice(start, start + this.itemsPerPage);
+  }
+
+  get totalPages(): number[] {
+    return Array.from({ length: Math.ceil(this.filteredProveedores.length / this.itemsPerPage) }, (_, i) => i + 1);
+  }
+
+  changePage(page: number): void {
+    this.currentPage = page;
+  }
+
+  /** Abrir modal de crear/editar */
   openModal(proveedor?: Proveedor): void {
     if (proveedor) {
       this.isEditMode = true;
@@ -60,23 +111,27 @@ export class ProveedoresComponent implements OnInit {
     this.showModal = true;
   }
 
-  /** Cierra modal de creación/edición */
+  /** Cerrar modal */
   closeModal(): void {
     this.showModal = false;
     this.selectedProveedor = null;
     this.proveedorForm.reset({ estado: true });
   }
 
-  /** Guarda o actualiza un proveedor */
+  /** Crear o editar proveedor */
   saveProveedor(): void {
-    if (this.proveedorForm.invalid) return;
+    if (this.proveedorForm.invalid) {
+      this.proveedorForm.markAllAsTouched();
+      return;
+    }
 
-    const payload: Proveedor = this.proveedorForm.value;
+    const proveedorData: Proveedor = this.proveedorForm.value;
     this.loading = true;
 
-    const request$ = this.isEditMode && this.selectedProveedor?.id
-      ? this.proveedoresService.updateProveedor(this.selectedProveedor.id, payload)
-      : this.proveedoresService.createProveedor(payload);
+    const request$ =
+      this.isEditMode && this.selectedProveedor?.id
+        ? this.proveedoresService.updateProveedor(this.selectedProveedor.id, proveedorData)
+        : this.proveedoresService.createProveedor(proveedorData);
 
     request$.subscribe({
       next: () => {
@@ -88,24 +143,41 @@ export class ProveedoresComponent implements OnInit {
     });
   }
 
-  /** Abre/cierra modal de eliminación */
+  /** Modales eliminar/restaurar */
   toggleDeleteModal(proveedor?: Proveedor): void {
     this.selectedProveedor = proveedor ?? null;
     this.showDeleteModal = !!proveedor;
   }
 
-  /** Confirma eliminación */
+  toggleRestoreModal(proveedor?: Proveedor): void {
+    this.selectedProveedor = proveedor ?? null;
+    this.showRestoreModal = !!proveedor;
+  }
+
+  /** Cambiar estado (activo/inactivo) */
   deleteProveedorConfirmed(): void {
     if (!this.selectedProveedor) return;
 
-    this.loading = true;
-    this.proveedoresService.deleteProveedor(this.selectedProveedor.id!).subscribe({
+    const actualizado = { ...this.selectedProveedor, estado: false };
+    this.proveedoresService.updateProveedor(actualizado.id!, actualizado).subscribe({
       next: () => {
         this.loadProveedores();
-        this.toggleDeleteModal(); // Cierra modal
+        this.toggleDeleteModal();
       },
-      error: (err) => console.error('Error al eliminar:', err),
-      complete: () => (this.loading = false),
+      error: (err) => console.error('Error al inactivar proveedor:', err),
+    });
+  }
+
+  restoreProveedorConfirmed(): void {
+    if (!this.selectedProveedor) return;
+
+    const actualizado = { ...this.selectedProveedor, estado: true };
+    this.proveedoresService.updateProveedor(actualizado.id!, actualizado).subscribe({
+      next: () => {
+        this.loadProveedores();
+        this.toggleRestoreModal();
+      },
+      error: (err) => console.error('Error al restaurar proveedor:', err),
     });
   }
 }
