@@ -1,0 +1,35 @@
+\babel@toc {spanish}{}\relax 
+\contentsline {section}{Introducción}{7}{Doc-Start}%
+\contentsline {section}{Capítulo I}{8}{Doc-Start}%
+\contentsline {subsection}{Descripción de la problemática}{8}{section*.1}%
+\contentsline {subsection}{Planteamiento del Problema}{8}{section*.1}%
+\contentsline {subsection}{Objetivos}{8}{section*.1}%
+\contentsline {subsubsection}{General}{8}{section*.2}%
+\contentsline {subsubsection}{especificos}{8}{section*.2}%
+\contentsline {subsection}{Justificación}{9}{section*.2}%
+\contentsline {subsubsection}{tecnica}{9}{section*.3}%
+\contentsline {subsubsection}{Social}{10}{Item.3}%
+\contentsline {subsubsection}{Financiera}{11}{Item.3}%
+\contentsline {section}{Capítulo II}{11}{figure.1}%
+\contentsline {subsection}{Marco teórico}{11}{section*.4}%
+\contentsline {subsubsection}{Inventario periódico}{11}{section*.4}%
+\contentsline {subsubsection}{Inventario permanente o automatizado}{11}{section*.4}%
+\contentsline {subsection}{Antecedentes}{12}{section*.4}%
+\contentsline {subsection}{Metodología de Desarrollo}{12}{section*.4}%
+\contentsline {subsection}{Diagrama de base}{14}{figure.2}%
+\contentsline {section}{Capítulo III}{15}{figure.3}%
+\contentsline {subsection}{Requerimientos}{15}{section*.5}%
+\contentsline {subsubsection}{Funcionales}{15}{section*.5}%
+\contentsline {subsubsection}{No Funcionales}{19}{section*.5}%
+\contentsline {subsection}{Metodología de desarrollo desplegada}{21}{section*.5}%
+\contentsline {subsection}{Diagrama de clases}{22}{section*.5}%
+\contentsline {subsection}{Diagrama de base de datos}{24}{figure.4}%
+\contentsline {subsection}{Diseño de entorno}{24}{figure.5}%
+\contentsline {subsubsection}{Estructura y Patrones de Diseño Aplicados}{28}{section*.6}%
+\contentsline {subsubsection}{Dependencia e Inyección}{29}{section*.6}%
+\contentsline {subsection}{Codificacion}{30}{section*.6}%
+\contentsline {subsubsection}{Capa de Modelo}{30}{section*.7}%
+\contentsline {subsubsection}{Capa de Repositorio}{31}{figure.6}%
+\contentsline {subsubsection}{Capa de Servicio}{32}{figure.7}%
+\contentsline {subsubsection}{Capa de Controlador}{33}{figure.8}%
+\contentsline {section}{anexos}{34}{figure.9}%
