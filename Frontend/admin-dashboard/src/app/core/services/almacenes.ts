@@ -8,7 +8,7 @@ import { environment } from '../../../environments/enviroment';
   providedIn: 'root'
 })
 export class Almacenes {
-  private readonly baseUrl = `${environment.apiUrl}/almacenes`;
+  private baseUrl = `${environment.apiUrl}/almacenes`;
 
   constructor(private http: HttpClient) {}
 

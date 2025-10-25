@@ -1,15 +1,11 @@
-export interface Rol {
-  id: number;
-  nombre: string;
-  estado: boolean;
-}
+import { Rol } from './rol';
 
 export interface Usuario {
   id?: number;
   nombre: string;
   clave: string;
   dni: string;
-  fechaNacimiento: string; // ISO string (YYYY-MM-DD)
+  fechaNacimiento: string; // ISO string
   idRol: Rol;
   estado: boolean;
 }

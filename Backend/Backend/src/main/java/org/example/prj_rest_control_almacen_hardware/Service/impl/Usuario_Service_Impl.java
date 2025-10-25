@@ -37,10 +37,14 @@ public List<Usuario_Entity> findAll() {
             Usuario_Entity usuarioActualizado = usuarioExistente.get();
             usuarioActualizado.setNombre(usuario.getNombre());
             usuarioActualizado.setClave(usuario.getClave());
+            usuarioActualizado.setDni(usuario.getDni());
+            usuarioActualizado.setFechaNacimiento(usuario.getFechaNacimiento());
+            usuarioActualizado.setIdRol(usuario.getIdRol());
+            usuarioActualizado.setEstado(usuario.getEstado());
 
             return Optional.of(usuario_repo.save(usuarioActualizado));
         }
-        return Optional.empty(); // O lanzar excepción si el usuario no existe
+        return Optional.empty();
     }
 
     @Override

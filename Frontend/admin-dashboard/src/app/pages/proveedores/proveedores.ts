@@ -1,6 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+  AbstractControl,
+  ValidationErrors,
+  ValidatorFn,
+} from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { Proveedor } from '../../core/models/proveedor';
 import { Proveedores } from '../../core/services/proveedores';
@@ -24,12 +32,13 @@ export class ProveedoresComponent implements OnInit {
   showModal = false;
   showDeleteModal = false;
   showRestoreModal = false;
+  showPermanentDeleteModal = false;
 
   searchTerm = '';
-
-  // 🔹 Paginación
   currentPage = 1;
-  itemsPerPage = 5;
+  itemsPerPage = 7;
+
+  filterStatus: 'all' | 'active' | 'inactive' = 'all';
 
   constructor(private proveedoresService: Proveedores, private fb: FormBuilder) {}
 
@@ -38,29 +47,26 @@ export class ProveedoresComponent implements OnInit {
     this.initForm();
   }
 
-  /** Inicializa el formulario con validaciones */
+  private duplicateRucValidator(currentId: number | null = null): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const rucValue = control.value;
+      const duplicate = this.proveedores.some((p) => p.ruc === rucValue && p.id !== currentId);
+      return duplicate ? { duplicate: true } : null;
+    };
+  }
+
   private initForm(): void {
     this.proveedorForm = this.fb.group({
       nombre: ['', [Validators.required, Validators.minLength(3)]],
       ruc: [
         '',
-        [
-          Validators.required,
-          Validators.pattern(/^\d{11}$/), // Solo números y 11 dígitos exactos
-        ],
+        [Validators.required, Validators.pattern(/^\d{11}$/), this.duplicateRucValidator()],
       ],
-      telefono: [
-        '',
-        [
-          Validators.pattern(/^\d*$/), // Solo números
-          Validators.maxLength(9), // Máximo 9 dígitos
-        ],
-      ],
+      telefono: ['', [Validators.pattern(/^\d*$/), Validators.maxLength(9)]],
       estado: [true],
     });
   }
 
-  /** Carga lista completa de proveedores */
   loadProveedores(): void {
     this.proveedoresService.getProveedores().subscribe({
       next: (data) => {
@@ -71,56 +77,80 @@ export class ProveedoresComponent implements OnInit {
     });
   }
 
-  /** Filtro de búsqueda */
   applyFilter(): void {
     const term = this.searchTerm.toLowerCase();
-    this.filteredProveedores = this.proveedores.filter(
-      (p) =>
+
+    this.filteredProveedores = this.proveedores.filter((p) => {
+      const matchesSearch =
         p.nombre.toLowerCase().includes(term) ||
         p.ruc.toLowerCase().includes(term) ||
-        (p.telefono && p.telefono.toLowerCase().includes(term))
-    );
+        (p.telefono && p.telefono.toLowerCase().includes(term));
+
+      const matchesStatus =
+        this.filterStatus === 'all' ||
+        (this.filterStatus === 'active' && p.estado) ||
+        (this.filterStatus === 'inactive' && !p.estado);
+
+      return matchesSearch && matchesStatus;
+    });
+
     this.currentPage = 1;
   }
 
-  /** Paginación */
   get paginatedProveedores(): Proveedor[] {
     const start = (this.currentPage - 1) * this.itemsPerPage;
     return this.filteredProveedores.slice(start, start + this.itemsPerPage);
   }
 
   get totalPages(): number[] {
-    return Array.from({ length: Math.ceil(this.filteredProveedores.length / this.itemsPerPage) }, (_, i) => i + 1);
+    return Array.from(
+      { length: Math.ceil(this.filteredProveedores.length / this.itemsPerPage) },
+      (_, i) => i + 1
+    );
   }
 
   changePage(page: number): void {
     this.currentPage = page;
   }
 
-  /** Abrir modal de crear/editar */
   openModal(proveedor?: Proveedor): void {
     if (proveedor) {
       this.isEditMode = true;
       this.selectedProveedor = { ...proveedor };
       this.proveedorForm.patchValue(proveedor);
+      // actualizar validator para ignorar el propio RUC
+      this.proveedorForm
+        .get('ruc')
+        ?.setValidators([
+          Validators.required,
+          Validators.pattern(/^\d{11}$/),
+          this.duplicateRucValidator(proveedor.id),
+        ]);
+      this.proveedorForm.get('ruc')?.updateValueAndValidity();
     } else {
       this.isEditMode = false;
       this.selectedProveedor = null;
       this.proveedorForm.reset({ estado: true });
+      this.proveedorForm
+        .get('ruc')
+        ?.setValidators([
+          Validators.required,
+          Validators.pattern(/^\d{11}$/),
+          this.duplicateRucValidator(),
+        ]);
+      this.proveedorForm.get('ruc')?.updateValueAndValidity();
     }
     this.showModal = true;
   }
 
-  /** Cerrar modal */
   closeModal(): void {
     this.showModal = false;
     this.selectedProveedor = null;
     this.proveedorForm.reset({ estado: true });
   }
 
-  /** Crear o editar proveedor */
   saveProveedor(): void {
-    if (this.proveedorForm.invalid) {
+    if (this.proveedorForm.invalid || this.proveedorForm.get('ruc')?.hasError('duplicate')) {
       this.proveedorForm.markAllAsTouched();
       return;
     }
@@ -143,26 +173,20 @@ export class ProveedoresComponent implements OnInit {
     });
   }
 
-  /** Modales eliminar/restaurar */
-  toggleDeleteModal(proveedor?: Proveedor): void {
+  toggleModal(type: 'delete' | 'restore' | 'permanent', proveedor?: Proveedor): void {
     this.selectedProveedor = proveedor ?? null;
-    this.showDeleteModal = !!proveedor;
+    this.showDeleteModal = type === 'delete' && !!proveedor && proveedor.estado;
+    this.showRestoreModal = type === 'restore' && !!proveedor && !proveedor.estado;
+    this.showPermanentDeleteModal = type === 'permanent' && !!proveedor && !proveedor.estado;
   }
 
-  toggleRestoreModal(proveedor?: Proveedor): void {
-    this.selectedProveedor = proveedor ?? null;
-    this.showRestoreModal = !!proveedor;
-  }
-
-  /** Cambiar estado (activo/inactivo) */
   deleteProveedorConfirmed(): void {
     if (!this.selectedProveedor) return;
-
     const actualizado = { ...this.selectedProveedor, estado: false };
     this.proveedoresService.updateProveedor(actualizado.id!, actualizado).subscribe({
       next: () => {
         this.loadProveedores();
-        this.toggleDeleteModal();
+        this.toggleModal('delete');
       },
       error: (err) => console.error('Error al inactivar proveedor:', err),
     });
@@ -170,14 +194,24 @@ export class ProveedoresComponent implements OnInit {
 
   restoreProveedorConfirmed(): void {
     if (!this.selectedProveedor) return;
-
     const actualizado = { ...this.selectedProveedor, estado: true };
     this.proveedoresService.updateProveedor(actualizado.id!, actualizado).subscribe({
       next: () => {
         this.loadProveedores();
-        this.toggleRestoreModal();
+        this.toggleModal('restore');
       },
       error: (err) => console.error('Error al restaurar proveedor:', err),
+    });
+  }
+
+  deleteProveedorPermanentConfirmed(): void {
+    if (!this.selectedProveedor) return;
+    this.proveedoresService.deleteProveedor(this.selectedProveedor.id!).subscribe({
+      next: () => {
+        this.loadProveedores();
+        this.toggleModal('permanent');
+      },
+      error: (err) => console.error('Error al eliminar proveedor:', err),
     });
   }
 }
