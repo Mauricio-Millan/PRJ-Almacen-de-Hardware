@@ -80,6 +80,9 @@
           </span>
         </td>
         <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+          <button class="text-purple-600 hover:text-purple-900 mr-3" (click)="openLineaTiempoModal(usuario)">
+            Ver Actividad
+          </button>
           <ng-container *ngIf="usuario.estado; else inactiveActions">
             <button class="text-indigo-600 hover:text-indigo-900 mr-3" (click)="openModal(usuario)">
               Editar
@@ -317,6 +320,249 @@
       >
         Eliminar
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- 📊 Modal Línea de Tiempo del Usuario -->
+<div *ngIf="showLineaTiempoModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50 p-4">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-2xl font-semibold text-gray-800">Línea de Tiempo de Actividades</h3>
+      <button (click)="closeLineaTiempoModal()" class="text-gray-500 hover:text-gray-700">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div *ngIf="loadingLineaTiempo" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+    </div>
+
+    <div *ngIf="!loadingLineaTiempo && usuarioAcciones">
+      <!-- Información del Usuario -->
+      <div class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg p-6 mb-6">
+        <h4 class="text-xl font-bold mb-2">{{ usuarioAcciones.informacionUsuario.nombreUsuario }}</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <span class="font-semibold">🆔 ID:</span> {{ usuarioAcciones.informacionUsuario.idUsuario }}
+          </div>
+          <div>
+            <span class="font-semibold">📋 DNI:</span> {{ usuarioAcciones.informacionUsuario.dni }}
+          </div>
+          <div>
+            <span class="font-semibold">👤 Rol:</span> {{ usuarioAcciones.informacionUsuario.rol }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumen de Actividades -->
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <p class="text-xs text-gray-600 mb-1">Total Movimientos</p>
+          <p class="text-2xl font-bold text-blue-600">{{ usuarioAcciones.resumen.totalMovimientos }}</p>
+        </div>
+        <div class="bg-green-50 p-4 rounded-lg">
+          <p class="text-xs text-gray-600 mb-1">Abastecimientos</p>
+          <p class="text-2xl font-bold text-green-600">{{ usuarioAcciones.resumen.totalAbastecimientos }}</p>
+        </div>
+        <div class="bg-purple-50 p-4 rounded-lg">
+          <p class="text-xs text-gray-600 mb-1">Traslados</p>
+          <p class="text-2xl font-bold text-purple-600">{{ usuarioAcciones.resumen.totalTraslados }}</p>
+        </div>
+        <div class="bg-yellow-50 p-4 rounded-lg">
+          <p class="text-xs text-gray-600 mb-1">Ventas</p>
+          <p class="text-2xl font-bold text-yellow-600">{{ usuarioAcciones.resumen.totalVentas }}</p>
+        </div>
+        <div class="bg-orange-50 p-4 rounded-lg">
+          <p class="text-xs text-gray-600 mb-1">Ingresos por Ventas</p>
+          <p class="text-xl font-bold text-orange-600">S/. {{ usuarioAcciones.resumen.totalIngresosVentas | number:'1.2-2' }}</p>
+        </div>
+      </div>
+
+      <!-- Estadísticas de Unidades -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-teal-50 p-4 rounded-lg">
+          <p class="text-xs text-gray-600 mb-1">Unidades Abastecidas</p>
+          <p class="text-2xl font-bold text-teal-600">{{ usuarioAcciones.resumen.totalUnidadesAbastecidas }}</p>
+        </div>
+        <div class="bg-indigo-50 p-4 rounded-lg">
+          <p class="text-xs text-gray-600 mb-1">Unidades Trasladadas</p>
+          <p class="text-2xl font-bold text-indigo-600">{{ usuarioAcciones.resumen.totalUnidadesTrasladadas }}</p>
+        </div>
+        <div class="bg-pink-50 p-4 rounded-lg">
+          <p class="text-xs text-gray-600 mb-1">Unidades Vendidas</p>
+          <p class="text-2xl font-bold text-pink-600">{{ usuarioAcciones.resumen.totalUnidadesVendidas }}</p>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+        <h5 class="text-lg font-semibold mb-4">Filtrar Actividades</h5>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Desde</label>
+            <input
+              type="datetime-local"
+              [(ngModel)]="filtroFechaDesde"
+              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Hasta</label>
+            <input
+              type="datetime-local"
+              [(ngModel)]="filtroFechaHasta"
+              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Acción</label>
+            <select
+              [(ngModel)]="filtroTipoAccion"
+              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option [value]="null">Todos</option>
+              <option [value]="1">Abastecimiento</option>
+              <option [value]="2">Movimientos</option>
+              <option [value]="3">Ventas</option>
+              <option [value]="4">Ajustes</option>
+            </select>
+          </div>
+          <div class="flex items-end space-x-2">
+            <button
+              (click)="aplicarFiltros()"
+              class="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium"
+            >
+              Aplicar
+            </button>
+            <button
+              (click)="limpiarFiltrosLineaTiempo()"
+              class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg font-medium"
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Productos -->
+      <div class="mb-6">
+        <h5 class="text-lg font-semibold mb-4">Top Productos Manejados</h5>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div *ngFor="let producto of usuarioAcciones.topProductos" class="bg-white border rounded-lg p-4 shadow-sm">
+            <p class="font-semibold text-gray-800">{{ producto.nombreProducto }}</p>
+            <p class="text-sm text-gray-600">{{ producto.marca }}</p>
+            <div class="mt-2 flex justify-between text-sm">
+              <span class="text-gray-600">Movimientos: <strong>{{ producto.cantidadMovimientos }}</strong></span>
+              <span class="text-gray-600">Unidades: <strong>{{ producto.totalUnidadesManejadas }}</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Almacenes Utilizados -->
+      <div class="mb-6">
+        <h5 class="text-lg font-semibold mb-4">Almacenes Utilizados</h5>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div *ngFor="let almacen of usuarioAcciones.almacenesUtilizados" class="bg-white border rounded-lg p-4 shadow-sm">
+            <p class="font-semibold text-gray-800">{{ almacen.nombreAlmacen }}</p>
+            <div class="mt-2 grid grid-cols-3 gap-2 text-sm">
+              <div>
+                <p class="text-gray-600">Operaciones</p>
+                <p class="font-bold text-purple-600">{{ almacen.cantidadOperaciones }}</p>
+              </div>
+              <div>
+                <p class="text-gray-600">Como Origen</p>
+                <p class="font-bold text-blue-600">{{ almacen.operacionesComoOrigen }}</p>
+              </div>
+              <div>
+                <p class="text-gray-600">Como Destino</p>
+                <p class="font-bold text-green-600">{{ almacen.operacionesComoDestino }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Línea de Tiempo (Timeline) -->
+      <div class="mb-6">
+        <h5 class="text-lg font-semibold mb-4">Actividades Registradas ({{ usuarioAcciones.lineaTiempo.length }})</h5>
+        <div class="space-y-4 max-h-[500px] overflow-y-auto">
+          <div *ngFor="let accion of usuarioAcciones.lineaTiempo" class="bg-white border-l-4 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+               [ngClass]="{
+                 'border-green-500': accion.tipoFlujo === 'Entrada',
+                 'border-red-500': accion.tipoFlujo === 'Salida',
+                 'border-blue-500': accion.tipoFlujo === 'Traslado',
+                 'border-yellow-500': accion.tipoFlujo === 'Ajuste'
+               }">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <span class="px-3 py-1 rounded-full text-xs font-medium mr-2"
+                      [ngClass]="getTipoFlujoColor(accion.tipoFlujo)">
+                  {{ accion.tipoFlujo }}
+                </span>
+                <span class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  {{ accion.tipoAccion }}
+                </span>
+              </div>
+              <span class="text-sm text-gray-500">{{ accion.fechaHora }}</span>
+            </div>
+            <p class="text-gray-800 mb-2">{{ accion.descripcionAccion }}</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div>
+                <span class="text-gray-600">Producto:</span>
+                <p class="font-semibold">{{ accion.nombreProducto }}</p>
+              </div>
+              <div>
+                <span class="text-gray-600">Marca:</span>
+                <p class="font-semibold">{{ accion.marca }}</p>
+              </div>
+              <div>
+                <span class="text-gray-600">Cantidad:</span>
+                <p class="font-semibold text-purple-600">{{ accion.cantidad }} unidades</p>
+              </div>
+              <div>
+                <span class="text-gray-600">Precio Unit.:</span>
+                <p class="font-semibold">S/. {{ accion.precioUnitarioLote | number:'1.2-2' }}</p>
+              </div>
+            </div>
+            <div *ngIf="accion.almacenOrigen || accion.almacenDestino" class="mt-2 pt-2 border-t text-sm">
+              <div class="grid grid-cols-2 gap-3">
+                <div *ngIf="accion.almacenOrigen">
+                  <span class="text-gray-600">Origen:</span>
+                  <p class="font-semibold">{{ accion.almacenOrigen }}</p>
+                </div>
+                <div *ngIf="accion.almacenDestino">
+                  <span class="text-gray-600">Destino:</span>
+                  <p class="font-semibold">{{ accion.almacenDestino }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="mt-2 text-sm">
+              <span class="text-gray-600">Referencia:</span>
+              <span class="font-mono text-gray-800">{{ accion.referencia }}</span>
+              <span class="ml-4 text-gray-600">Comentario:</span>
+              <span class="text-gray-800">{{ accion.comentario }}</span>
+            </div>
+          </div>
+
+          <div *ngIf="usuarioAcciones.lineaTiempo.length === 0" class="text-center py-8 text-gray-500">
+            No se encontraron actividades para este usuario.
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón Cerrar -->
+      <div class="mt-6 flex justify-end">
+        <button
+          (click)="closeLineaTiempoModal()"
+          class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-6 rounded-lg font-medium"
+        >
+          Cerrar
+        </button>
+      </div>
     </div>
   </div>
 </div>

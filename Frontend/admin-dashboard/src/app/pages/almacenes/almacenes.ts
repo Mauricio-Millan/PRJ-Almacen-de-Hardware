@@ -4,6 +4,8 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { FormsModule } from '@angular/forms';
 import { Almacen } from '../../core/models/almacen';
 import { Almacenes } from '../../core/services/almacenes';
+import { AlmacendetalleService } from '../../core/services/almacendetalleservice';
+import { AlmacenDetalle, ProductoDetalle } from '../../core/models/almacendetalle';
 
 @Component({
   selector: 'app-almacenes',
@@ -23,14 +25,24 @@ export class AlmacenesComponent implements OnInit {
 
   showModal = false;
   showDeleteModal = false;
+  showDetalleModal = false;
 
   searchTerm = '';
+  searchProducto = '';
+
+  // 🔹 Detalle del almacén
+  almacenDetalle: AlmacenDetalle | null = null;
+  loadingDetalle = false;
 
   // 🔹 Paginación
   currentPage = 1;
   itemsPerPage = 7;
 
-  constructor(private almacenesService: Almacenes, private fb: FormBuilder) {}
+  constructor(
+    private almacenesService: Almacenes, 
+    private fb: FormBuilder,
+    private almacenDetalleService: AlmacendetalleService
+  ) {}
 
   ngOnInit(): void {
     this.loadAlmacenes();
@@ -152,5 +164,72 @@ export class AlmacenesComponent implements OnInit {
       },
       error: (err) => console.error('Error al eliminar almacén:', err),
     });
+  }
+
+  /** Abrir modal de detalle del almacén */
+  openDetalleModal(almacen: Almacen): void {
+    this.selectedAlmacen = almacen;
+    this.showDetalleModal = true;
+    this.searchProducto = '';
+    this.loadAlmacenDetalle(almacen.id!);
+  }
+
+  /** Cerrar modal de detalle */
+  closeDetalleModal(): void {
+    this.showDetalleModal = false;
+    this.almacenDetalle = null;
+    this.selectedAlmacen = null;
+    this.searchProducto = '';
+  }
+
+  /** Cargar detalle del almacén */
+  loadAlmacenDetalle(idAlmacen: number, producto?: string): void {
+    console.log('📡 Iniciando carga de detalle...', { idAlmacen, producto });
+    this.loadingDetalle = true;
+    
+    this.almacenDetalleService.getAlmacenDetalle(idAlmacen, producto).subscribe({
+      next: (data) => {
+        console.log('Respuesta recibida del backend:', data);
+        console.log('Total productos recibidos:', data.productos?.length || 0);
+        this.almacenDetalle = data;
+        this.loadingDetalle = false;
+      },
+      error: (err) => {
+        console.error(' Error al cargar detalle del almacén:', err);
+        this.loadingDetalle = false;
+      },
+      complete: () => {
+        console.log('Petición completada');
+      }
+    });
+  }
+
+  /** Filtrar productos en el detalle */
+  filtrarProductos(): void {
+    if (!this.selectedAlmacen?.id) {
+      console.error('No hay almacén seleccionado');
+      return;
+    }
+
+    const productoTexto = this.searchProducto?.trim() || '';
+    
+    console.log('Filtrando productos:', {
+      idAlmacen: this.selectedAlmacen.id,
+      textoBusqueda: productoTexto
+    });
+    
+    // Si hay texto de búsqueda, pasarlo; si no, pasar undefined
+    this.loadAlmacenDetalle(
+      this.selectedAlmacen.id, 
+      productoTexto !== '' ? productoTexto : undefined
+    );
+  }
+
+  /** Limpiar filtro de productos */
+  limpiarFiltro(): void {
+    this.searchProducto = '';
+    if (this.selectedAlmacen?.id) {
+      this.loadAlmacenDetalle(this.selectedAlmacen.id);
+    }
   }
 }

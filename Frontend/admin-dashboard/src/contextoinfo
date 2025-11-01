@@ -1,0 +1,154 @@
+{
+  "informacionUsuario": {
+    "idUsuario": 1,
+    "nombreUsuario": "mauricio",
+    "dni": "12345678",
+    "rol": "admin"
+  },
+  "lineaTiempo": [
+    {
+      "idMovimiento": 2,
+      "fechaHora": "02/10/2025 12:49:03",
+      "idTipoAccion": 2,
+      "tipoAccion": "Movimientos",
+      "referencia": "TRF001",
+      "comentario": "Traslado válido",
+      "idMovimientoLinea": 4,
+      "cantidad": 5,
+      "precioVenta": null,
+      "idLote": 1,
+      "idProducto": 1,
+      "nombreProducto": "Procesador Ryzen 7",
+      "marca": "AMD",
+      "precioUnitarioLote": 1200,
+      "idAlmacenOrigen": 1,
+      "almacenOrigen": "Almacen Central",
+      "idAlmacenDestino": 2,
+      "almacenDestino": "Almacen Secundario",
+      "descripcionAccion": "Traslado de 5 unidades de Procesador Ryzen 7 desde Almacen Central hacia Almacen Secundario",
+      "fechaRegistro": "02/10/2025 12:49:03",
+      "tipoFlujo": "Traslado"
+    },
+    {
+      "idMovimiento": 1,
+      "fechaHora": "01/06/2024 00:00:00",
+      "idTipoAccion": 1,
+      "tipoAccion": "Abastecimiento",
+      "referencia": "REF001",
+      "comentario": "Compra inicial",
+      "idMovimientoLinea": 1,
+      "cantidad": 10,
+      "precioVenta": null,
+      "idLote": 1,
+      "idProducto": 1,
+      "nombreProducto": "Procesador Ryzen 7",
+      "marca": "AMD",
+      "precioUnitarioLote": 1200,
+      "idAlmacenOrigen": null,
+      "almacenOrigen": null,
+      "idAlmacenDestino": 1,
+      "almacenDestino": "Almacen Central",
+      "descripcionAccion": "Abastecimiento de 10 unidades de Procesador Ryzen 7 al Almacen Central",
+      "fechaRegistro": "02/10/2025 12:49:03",
+      "tipoFlujo": "Entrada"
+    },
+    {
+      "idMovimiento": 1,
+      "fechaHora": "01/06/2024 00:00:00",
+      "idTipoAccion": 1,
+      "tipoAccion": "Abastecimiento",
+      "referencia": "REF001",
+      "comentario": "Compra inicial",
+      "idMovimientoLinea": 2,
+      "cantidad": 15,
+      "precioVenta": null,
+      "idLote": 2,
+      "idProducto": 2,
+      "nombreProducto": "GPU RTX 3080",
+      "marca": "NVIDIA",
+      "precioUnitarioLote": 2500,
+      "idAlmacenOrigen": null,
+      "almacenOrigen": null,
+      "idAlmacenDestino": 1,
+      "almacenDestino": "Almacen Central",
+      "descripcionAccion": "Abastecimiento de 15 unidades de GPU RTX 3080 al Almacen Central",
+      "fechaRegistro": "02/10/2025 12:49:03",
+      "tipoFlujo": "Entrada"
+    },
+    {
+      "idMovimiento": 1,
+      "fechaHora": "01/06/2024 00:00:00",
+      "idTipoAccion": 1,
+      "tipoAccion": "Abastecimiento",
+      "referencia": "REF001",
+      "comentario": "Compra inicial",
+      "idMovimientoLinea": 3,
+      "cantidad": 8,
+      "precioVenta": null,
+      "idLote": 3,
+      "idProducto": 3,
+      "nombreProducto": "Procesador Core i7",
+      "marca": "Intel",
+      "precioUnitarioLote": 1100,
+      "idAlmacenOrigen": null,
+      "almacenOrigen": null,
+      "idAlmacenDestino": 1,
+      "almacenDestino": "Almacen Central",
+      "descripcionAccion": "Abastecimiento de 8 unidades de Procesador Core i7 al Almacen Central",
+      "fechaRegistro": "02/10/2025 12:49:03",
+      "tipoFlujo": "Entrada"
+    }
+  ],
+  "resumen": {
+    "totalMovimientos": 2,
+    "totalAbastecimientos": 3,
+    "totalTraslados": 1,
+    "totalAjustes": 0,
+    "totalVentas": 0,
+    "totalUnidadesAbastecidas": 33,
+    "totalUnidadesTrasladadas": 5,
+    "totalUnidadesVendidas": 0,
+    "totalIngresosVentas": 0,
+    "primeraAccion": "2024-06-01 00:00:00.0",
+    "ultimaAccion": "2025-10-02 12:49:03.97"
+  },
+  "topProductos": [
+    {
+      "idProducto": 1,
+      "nombreProducto": "Procesador Ryzen 7",
+      "marca": "AMD",
+      "cantidadMovimientos": 2,
+      "totalUnidadesManejadas": 15
+    },
+    {
+      "idProducto": 2,
+      "nombreProducto": "GPU RTX 3080",
+      "marca": "NVIDIA",
+      "cantidadMovimientos": 1,
+      "totalUnidadesManejadas": 15
+    },
+    {
+      "idProducto": 3,
+      "nombreProducto": "Procesador Core i7",
+      "marca": "Intel",
+      "cantidadMovimientos": 1,
+      "totalUnidadesManejadas": 8
+    }
+  ],
+  "almacenesUtilizados": [
+    {
+      "idAlmacen": 1,
+      "nombreAlmacen": "Almacen Central",
+      "cantidadOperaciones": 4,
+      "operacionesComoOrigen": 1,
+      "operacionesComoDestino": 3
+    },
+    {
+      "idAlmacen": 2,
+      "nombreAlmacen": "Almacen Secundario",
+      "cantidadOperaciones": 1,
+      "operacionesComoOrigen": 0,
+      "operacionesComoDestino": 1
+    }
+  ]
+}
