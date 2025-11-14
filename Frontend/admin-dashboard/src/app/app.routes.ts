@@ -7,6 +7,7 @@ import { UsuariosComponent } from './pages/usuarios/usuarios';
 import { MarcasComponent } from './pages/marcas/marcas';
 import { ProductosComponent } from './pages/productos/productos';
 import { ClientesComponent } from './pages/clientes/clientes';
+import { ComprasComponent } from './pages/compras/compras';
 
 export const routes: Routes = [
   {
@@ -19,7 +20,8 @@ export const routes: Routes = [
       { path: 'usuarios', component: UsuariosComponent },
       { path: 'marcas', component: MarcasComponent },
       { path: 'productos', component: ProductosComponent },
-        { path: 'clientes', component: ClientesComponent },
+      { path: 'clientes', component: ClientesComponent },
+      { path: 'compras', component: ComprasComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' } // Redirige a dashboard por defecto
     ]
   },
