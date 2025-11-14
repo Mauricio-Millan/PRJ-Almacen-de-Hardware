@@ -1,0 +1,172 @@
+<div class="p-6">
+
+  <!-- TÍTULO + BOTÓN NUEVO -->
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Ventas</h1>
+
+    <button
+      (click)="abrirModalNuevo()"
+      class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+      + Nueva Venta
+    </button>
+  </div>
+
+  <!-- TABLA DE VENTAS -->
+  <div class="overflow-x-auto shadow rounded-lg border border-gray-200">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+      <tr>
+        <th class="px-4 py-3">ID</th>
+        <th class="px-4 py-3">Fecha</th>
+        <th class="px-4 py-3">Estado</th>
+        <th class="px-4 py-3">Usuario</th>
+        <th class="px-4 py-3">Cliente</th>
+        <th class="px-4 py-3">Movimiento</th>
+        <th class="px-4 py-3 text-center">Acciones</th>
+      </tr>
+      </thead>
+
+      <tbody>
+      <tr *ngFor="let venta of ventas" class="border-b hover:bg-gray-50">
+        <td class="px-4 py-3">{{ venta.id }}</td>
+        <td class="px-4 py-3">{{ venta.fecha | date:'yyyy-MM-dd HH:mm' }}</td>
+        <td class="px-4 py-3">
+            <span class="px-2 py-1 text-xs rounded"
+                  [ngClass]="venta.estado ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+              {{ venta.estado ? 'Activo' : 'Inactivo' }}
+            </span>
+        </td>
+        <td class="px-4 py-3">{{ venta.idUsuario }}</td>
+        <td class="px-4 py-3">{{ venta.idCliente }}</td>
+        <td class="px-4 py-3">{{ venta.idMovimiento }}</td>
+
+        <td class="px-4 py-3 text-center flex gap-2 justify-center">
+          <button
+            (click)="abrirModalEditar(venta)"
+            class="text-blue-600 hover:text-blue-800">
+            ✏️
+          </button>
+
+          <button
+            (click)="abrirModalEliminar(venta)"
+            class="text-red-600 hover:text-red-800">
+            🗑️
+          </button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- MODAL DE REGISTRO / EDICIÓN -->
+<div
+  *ngIf="modalVisible"
+  class="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex justify-center items-center z-50">
+
+  <div class="bg-white w-full max-w-md rounded-lg shadow-lg p-6 animate-fade-in">
+
+    <h2 class="text-xl font-semibold mb-4">
+      {{ ventaActual.id ? 'Editar Venta' : 'Nueva Venta' }}
+    </h2>
+
+    <!-- CAMPOS -->
+    <form class="space-y-4">
+
+      <div>
+        <label class="text-sm">Fecha:</label>
+        <input
+          type="datetime-local"
+          [(ngModel)]="ventaActual.fecha"
+          name="fecha"
+          class="w-full mt-1 px-3 py-2 border rounded-lg">
+      </div>
+
+      <div>
+        <label class="text-sm">Estado:</label>
+        <select
+          [(ngModel)]="ventaActual.estado"
+          name="estado"
+          class="w-full mt-1 px-3 py-2 border rounded-lg">
+          <option [ngValue]="true">Activo</option>
+          <option [ngValue]="false">Inactivo</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="text-sm">Usuario (ID):</label>
+        <input
+          type="number"
+          [(ngModel)]="ventaActual.idUsuario"
+          name="usuario"
+          class="w-full mt-1 px-3 py-2 border rounded-lg">
+      </div>
+
+      <div>
+        <label class="text-sm">Cliente (ID):</label>
+        <input
+          type="number"
+          [(ngModel)]="ventaActual.idCliente"
+          name="cliente"
+          class="w-full mt-1 px-3 py-2 border rounded-lg">
+      </div>
+
+      <div>
+        <label class="text-sm">Movimiento (ID):</label>
+        <input
+          type="number"
+          [(ngModel)]="ventaActual.idMovimiento"
+          name="movimiento"
+          class="w-full mt-1 px-3 py-2 border rounded-lg">
+      </div>
+
+    </form>
+
+    <!-- BOTONEeS -->
+    <div class="flex justify-end mt-6 gap-3">
+      <button
+        (click)="cerrarModal()"
+        class="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400">
+        Cancelar
+      </button>
+
+      <button
+        (click)="guardarVenta()"
+        class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL ELIMINAR -->
+<div
+  *ngIf="modalEliminar"
+  class="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex justify-center items-center z-50">
+
+  <div class="bg-white w-full max-w-sm rounded-lg shadow-lg p-6 animate-fade-in">
+    <h2 class="text-lg font-semibold mb-4 text-red-600">
+      Eliminar Venta
+    </h2>
+
+    <p class="text-gray-700">
+      ¿Seguro que deseas eliminar la venta <strong>#{{ ventaActual.id }}</strong>?
+    </p>
+
+    <div class="flex justify-end mt-6 gap-3">
+      <button
+        (click)="cerrarModalEliminar()"
+        class="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400">
+        Cancelar
+      </button>
+
+      <button
+        (click)="eliminarVenta()"
+        class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div>
