@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,7 +15,7 @@ public class Almacen_Entity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private Integer id;
+    private Long id;
 
     @Size(max = 255)
     @NotNull
@@ -28,5 +29,10 @@ public class Almacen_Entity {
     @Size(max = 13)
     @Column(name = "telefono", length = 13)
     private String telefono;
+
+
+    @ColumnDefault("1")
+    @Column(name = "estado")
+    private Boolean estado;
 
 }

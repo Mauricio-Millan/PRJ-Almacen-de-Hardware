@@ -6,16 +6,16 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Data
 @Entity
 @Table(name = "MovimientoLinea", schema = "dbo")
 public class MovimientoLinea_Entity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private Integer id;
+    private Long id;
 
     @NotNull
     @ManyToOne( optional = false)

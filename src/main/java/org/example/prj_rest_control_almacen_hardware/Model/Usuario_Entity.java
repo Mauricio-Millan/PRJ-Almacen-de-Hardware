@@ -18,7 +18,7 @@ import java.time.LocalDate;
 public class Usuario_Entity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Size(max = 255)
     @NotNull

@@ -1,5 +1,6 @@
 package org.example.prj_rest_control_almacen_hardware.Service;
 
+import org.example.prj_rest_control_almacen_hardware.DTOs.GenerarMovimientoDTO;
 import org.example.prj_rest_control_almacen_hardware.Model.Movimiento_Entity;
 
 import java.util.List;
@@ -13,4 +14,7 @@ public interface Movimiento_Service {
     Optional<Movimiento_Entity> update(Long id, Movimiento_Entity movimiento);
     //Métodos específicos
     Optional<Movimiento_Entity> findById(Long id);
+
+    // Método de generación de movimientos
+    Movimiento_Entity generarMovimiento(GenerarMovimientoDTO dto) throws Exception;
 }
