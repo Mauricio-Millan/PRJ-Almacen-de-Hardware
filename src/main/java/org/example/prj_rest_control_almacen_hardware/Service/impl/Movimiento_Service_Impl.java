@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.example.prj_rest_control_almacen_hardware.DTOs.CrearMovimientoLineaDTO;
 import org.example.prj_rest_control_almacen_hardware.DTOs.GenerarMovimientoDTO;
+import org.example.prj_rest_control_almacen_hardware.DTOs.LineaMovimientoDTO;
 import org.example.prj_rest_control_almacen_hardware.Model.*;
 import org.example.prj_rest_control_almacen_hardware.Repository.*;
 import org.example.prj_rest_control_almacen_hardware.Service.Movimiento_Service;
@@ -96,19 +97,20 @@ public class Movimiento_Service_Impl implements Movimiento_Service {
     @Transactional(rollbackFor = Exception.class)
     public Movimiento_Entity generarMovimiento(GenerarMovimientoDTO dto) throws Exception {
         try {
-            // DEBUG - Imprimir todos los campos recibidos
+            // DEBUG - Imprimir datos recibidos
             System.out.println("=== DEBUG: Datos recibidos ===");
             System.out.println("idUsuario: " + dto.getIdUsuario());
             System.out.println("idTipoAccion: " + dto.getIdTipoAccion());
-            System.out.println("idLoteExistente: " + dto.getIdLoteExistente());
-            System.out.println("idAlmacenOrigen: " + dto.getIdAlmacenOrigen());
-            System.out.println("idAlmacenDestino: " + dto.getIdAlmacenDestino());
-            System.out.println("cantidadDelta: " + dto.getCantidadDelta());
+            System.out.println("Cantidad de líneas: " + (dto.getLineas() != null ? dto.getLineas().size() : 0));
             System.out.println("===========================");
 
             // 1. Validar datos básicos requeridos
             if (dto.getIdUsuario() == null || dto.getIdTipoAccion() == null) {
                 throw new Exception("Usuario y Tipo de Acción son obligatorios");
+            }
+
+            if (dto.getLineas() == null || dto.getLineas().isEmpty()) {
+                throw new Exception("Debe incluir al menos una línea de movimiento");
             }
 
             // Obtener entidades relacionadas
@@ -122,7 +124,7 @@ public class Movimiento_Service_Impl implements Movimiento_Service {
                 .orElseThrow(() -> new Exception("Tipo de Acción no encontrado"));
             System.out.println("DEBUG: Tipo acción encontrado: " + tipoAccion.getNombre());
 
-            // 2. Crear el Movimiento
+            // 2. Crear el Movimiento (cabecera)
             System.out.println("DEBUG: Creando movimiento...");
             Movimiento_Entity movimiento = new Movimiento_Entity();
             movimiento.setFecha(dto.getFecha());
@@ -136,168 +138,215 @@ public class Movimiento_Service_Impl implements Movimiento_Service {
             movimiento = movimiento_Repository.save(movimiento);
             System.out.println("DEBUG: Movimiento creado con ID: " + movimiento.getId());
 
-            // 3. Procesar según el tipo de movimiento
+            // 3. Procesar cada línea según el tipo de movimiento
             Long idTipo = dto.getIdTipoAccion();
-            Lote_Entity lote;
 
-            if (idTipo == 1) {
-                // ABASTECIMIENTO (Compra)
-                if (dto.getIdAlmacenOrigen() != null) {
-                    throw new Exception("En abastecimientos el almacén origen debe ser null");
-                }
-                if (dto.getIdAlmacenDestino() == null) {
-                    throw new Exception("En abastecimientos el almacén destino es obligatorio");
-                }
+            for (int i = 0; i < dto.getLineas().size(); i++) {
+                LineaMovimientoDTO lineaDTO = dto.getLineas().get(i);
+                System.out.println("DEBUG: Procesando línea " + (i + 1) + " de " + dto.getLineas().size());
 
-                lote = procesarAbastecimiento(dto, movimiento, usuario);
+                Lote_Entity lote;
 
-            } else if (idTipo == 4) {
-                // VENTA
-                if (dto.getIdAlmacenDestino() != null) {
-                    throw new Exception("En ventas el almacén destino debe ser null");
-                }
-                if (dto.getIdAlmacenOrigen() == null) {
-                    throw new Exception("En ventas el almacén origen es obligatorio");
-                }
-                if (dto.getIdLoteExistente() == null) {
-                    throw new Exception("En ventas el lote existente es obligatorio");
+                if (idTipo == 1) {
+                    // ABASTECIMIENTO (Compra)
+                    lote = procesarAbastecimientoLinea(lineaDTO, dto, movimiento, usuario);
+                } else if (idTipo == 4) {
+                    // VENTA
+                    lote = procesarVentaLinea(lineaDTO, dto, movimiento, usuario);
+                } else if (idTipo == 2) {
+                    // TRANSFERENCIA
+                    lote = procesarTransferenciaLinea(lineaDTO);
+                } else if (idTipo == 3) {
+                    // AJUSTE
+                    lote = procesarAjusteLinea(lineaDTO);
+                } else {
+                    throw new Exception("Tipo de acción no válido");
                 }
 
-                lote = procesarVenta(dto, movimiento, usuario);
-
-            } else if (idTipo == 2) {
-                // TRANSFERENCIA
-                if (dto.getIdAlmacenOrigen() == null || dto.getIdAlmacenDestino() == null) {
-                    throw new Exception("En transferencias ambos almacenes son obligatorios");
-                }
-                if (dto.getIdAlmacenOrigen().equals(dto.getIdAlmacenDestino())) {
-                    throw new Exception("Los almacenes origen y destino no pueden ser iguales");
-                }
-                if (dto.getIdLoteExistente() == null) {
-                    throw new Exception("En transferencias el lote existente es obligatorio. Verifica el campo 'idLoteExistente' en el JSON.");
-                }
-
-                lote = procesarTransferencia(dto);
-
-            } else {
-                throw new Exception("Tipo de acción no válido");
+                // Crear la línea de movimiento
+                crearMovimientoLineaDesdeDTO(lineaDTO, movimiento, lote);
+                System.out.println("DEBUG: Línea " + (i + 1) + " procesada exitosamente");
             }
 
-            // 4. Crear la línea de movimiento
-            crearMovimientoLinea(dto, movimiento, lote);
-
+            System.out.println("DEBUG: Movimiento completo generado exitosamente");
             return movimiento;
 
         } catch (Exception e) {
-            // El rollback se maneja automáticamente con @Transactional
+            System.err.println("ERROR: " + e.getMessage());
+            System.err.println("ERROR Stack Trace: " + e.getClass().getName());
             throw new Exception("Error al generar movimiento: " + e.getMessage(), e);
         }
     }
 
     /**
-     * Procesa un abastecimiento (compra) creando la compra y el lote
+     * Procesa una línea de abastecimiento (compra) creando el lote
      */
-    private Lote_Entity procesarAbastecimiento(GenerarMovimientoDTO dto, Movimiento_Entity movimiento, Usuario_Entity usuario) throws Exception {
-        // Validar datos específicos
-        if (dto.getIdProveedor() == null) {
-            throw new Exception("El proveedor es obligatorio en abastecimientos");
+    private Lote_Entity procesarAbastecimientoLinea(LineaMovimientoDTO lineaDTO, GenerarMovimientoDTO dto,
+                                                     Movimiento_Entity movimiento, Usuario_Entity usuario) throws Exception {
+        // Validar datos específicos de la línea
+        if (lineaDTO.getIdAlmacenOrigen() != null) {
+            throw new Exception("En abastecimientos el almacén origen debe ser null");
         }
-        if (dto.getIdProducto() == null) {
+        if (lineaDTO.getIdAlmacenDestino() == null) {
+            throw new Exception("En abastecimientos el almacén destino es obligatorio");
+        }
+        if (lineaDTO.getIdProducto() == null) {
             throw new Exception("El producto es obligatorio en abastecimientos");
         }
-        if (dto.getCantidadLote() == null || dto.getCantidadLote() <= 0) {
+        if (lineaDTO.getCantidadLote() == null || lineaDTO.getCantidadLote() <= 0) {
             throw new Exception("La cantidad del lote debe ser mayor a 0");
         }
 
-        // Obtener proveedor
-        Proveedor_Entity proveedor = proveedor_Repository.findById(dto.getIdProveedor())
-            .orElseThrow(() -> new Exception("Proveedor no encontrado"));
+        // Validar proveedor (solo una vez por movimiento)
+        if (dto.getIdProveedor() == null) {
+            throw new Exception("El proveedor es obligatorio en abastecimientos");
+        }
 
-        // Crear la compra
-        Compra_Entity compra = new Compra_Entity();
-        compra.setFecha(movimiento.getFecha());
-        compra.setEstado(true);
-        compra.setIdUsuario(usuario);
-        compra.setIdMovimiento(movimiento);
-        compra.setIdProveedor(proveedor);
-        compra = compra_Repository.save(compra);
+        // Verificar si ya existe la compra o crearla
+        Compra_Entity compra = compra_Repository.findByIdMovimiento(movimiento)
+            .orElseGet(() -> {
+                try {
+                    Proveedor_Entity proveedor = proveedor_Repository.findById(dto.getIdProveedor())
+                        .orElseThrow(() -> new Exception("Proveedor no encontrado"));
+
+                    Compra_Entity nuevaCompra = new Compra_Entity();
+                    nuevaCompra.setFecha(movimiento.getFecha());
+                    nuevaCompra.setEstado(true);
+                    nuevaCompra.setIdUsuario(usuario);
+                    nuevaCompra.setIdMovimiento(movimiento);
+                    nuevaCompra.setIdProveedor(proveedor);
+                    return compra_Repository.save(nuevaCompra);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
         // Crear el lote
-        Producto_Entity producto = producto_Repository.findById(dto.getIdProducto().intValue())
-            .orElseThrow(() -> new Exception("Producto no encontrado"));
+        Producto_Entity producto = producto_Repository.findById(lineaDTO.getIdProducto().intValue())
+            .orElseThrow(() -> new Exception("Producto no encontrado con ID: " + lineaDTO.getIdProducto()));
 
         Lote_Entity lote = new Lote_Entity();
         lote.setIdCompra(compra);
-        lote.setCantidad(dto.getCantidadLote());
-        lote.setPrecioUnit(dto.getPrecioUnitario());
-        lote.setFechaExpiracion(dto.getFechaExpiracion());
+        lote.setCantidad(lineaDTO.getCantidadLote());
+        lote.setPrecioUnit(lineaDTO.getPrecioUnitario());
+        lote.setFechaExpiracion(lineaDTO.getFechaExpiracion());
         lote.setEstado(true);
         lote.setIdProducto(producto);
         lote = lote_Repository.save(lote);
 
+        System.out.println("DEBUG: Lote creado con ID: " + lote.getId());
         return lote;
     }
 
     /**
-     * Procesa una venta
+     * Procesa una línea de venta
      */
-    private Lote_Entity procesarVenta(GenerarMovimientoDTO dto, Movimiento_Entity movimiento, Usuario_Entity usuario) throws Exception {
-        // Validar datos específicos
-        if (dto.getIdCliente() == null) {
-            throw new Exception("El cliente es obligatorio en ventas");
+    private Lote_Entity procesarVentaLinea(LineaMovimientoDTO lineaDTO, GenerarMovimientoDTO dto,
+                                           Movimiento_Entity movimiento, Usuario_Entity usuario) throws Exception {
+        // Validar datos específicos de la línea
+        if (lineaDTO.getIdAlmacenDestino() != null) {
+            throw new Exception("En ventas el almacén destino debe ser null");
         }
-        if (dto.getIdLoteExistente() == null) {
+        if (lineaDTO.getIdAlmacenOrigen() == null) {
+            throw new Exception("En ventas el almacén origen es obligatorio");
+        }
+        if (lineaDTO.getIdLoteExistente() == null) {
             throw new Exception("El lote es obligatorio en ventas");
         }
-        if (dto.getPrecioVenta() == null) {
+        if (lineaDTO.getPrecioVenta() == null) {
             throw new Exception("El precio de venta es obligatorio");
         }
 
-        // Obtener cliente
-        Cliente_Entity cliente = cliente_Repository.findById(dto.getIdCliente())
-            .orElseThrow(() -> new Exception("Cliente no encontrado"));
+        // Validar cliente (solo una vez por movimiento)
+        if (dto.getIdCliente() == null) {
+            throw new Exception("El cliente es obligatorio en ventas");
+        }
 
-        // Crear la venta
-        Venta_Entity venta = new Venta_Entity();
-        venta.setIdUsuario(usuario);
-        venta.setIdMovimiento(movimiento);
-        venta.setIdCliente(cliente);
-        venta.setFecha(LocalDate.now());
-        venta.setEstado(true);
-        venta_Repository.save(venta);
+        // Verificar si ya existe la venta o crearla
+        venta_Repository.findByIdMovimiento(movimiento)
+            .orElseGet(() -> {
+                try {
+                    Cliente_Entity cliente = cliente_Repository.findById(dto.getIdCliente())
+                        .orElseThrow(() -> new Exception("Cliente no encontrado"));
+
+                    Venta_Entity nuevaVenta = new Venta_Entity();
+                    nuevaVenta.setIdUsuario(usuario);
+                    nuevaVenta.setIdMovimiento(movimiento);
+                    nuevaVenta.setIdCliente(cliente);
+                    nuevaVenta.setFecha(LocalDate.now());
+                    nuevaVenta.setEstado(true);
+                    return venta_Repository.save(nuevaVenta);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
         // Obtener el lote existente y retornarlo
-        return lote_Repository.findById(dto.getIdLoteExistente())
+        return lote_Repository.findById(lineaDTO.getIdLoteExistente())
             .orElseThrow(() -> new Exception("Lote no encontrado"));
     }
 
     /**
-     * Procesa una transferencia
+     * Procesa una línea de transferencia
      */
-    private Lote_Entity procesarTransferencia(GenerarMovimientoDTO dto) throws Exception {
-        // Validar datos específicos con mensajes detallados
-        if (dto.getIdLoteExistente() == null) {
-            throw new Exception("El lote es obligatorio en transferencias. Campo 'idLoteExistente' no puede ser null.");
+    private Lote_Entity procesarTransferenciaLinea(LineaMovimientoDTO lineaDTO) throws Exception {
+        // Validar datos específicos
+        if (lineaDTO.getIdAlmacenOrigen() == null || lineaDTO.getIdAlmacenDestino() == null) {
+            throw new Exception("En transferencias ambos almacenes son obligatorios");
+        }
+        if (lineaDTO.getIdAlmacenOrigen().equals(lineaDTO.getIdAlmacenDestino())) {
+            throw new Exception("Los almacenes origen y destino no pueden ser iguales");
+        }
+        if (lineaDTO.getIdLoteExistente() == null) {
+            throw new Exception("El lote es obligatorio en transferencias");
         }
 
-        // Log para debug
-        System.out.println("DEBUG - Buscando lote con ID: " + dto.getIdLoteExistente());
+        System.out.println("DEBUG - Buscando lote con ID: " + lineaDTO.getIdLoteExistente());
 
         // Obtener el lote existente y retornarlo
-        return lote_Repository.findById(dto.getIdLoteExistente())
-            .orElseThrow(() -> new Exception("Lote no encontrado con ID: " + dto.getIdLoteExistente()));
+        return lote_Repository.findById(lineaDTO.getIdLoteExistente())
+            .orElseThrow(() -> new Exception("Lote no encontrado con ID: " + lineaDTO.getIdLoteExistente()));
     }
 
     /**
-     * Crea la línea de movimiento con las validaciones necesarias
+     * Procesa una línea de ajuste de inventario
+     * Solo requiere: idMovimiento, idAlmacenOrigen, idLote y cantidadDelta
+     * La base de datos valida que el ajuste no llegue a negativo
      */
-    private void crearMovimientoLinea(GenerarMovimientoDTO dto, Movimiento_Entity movimiento, Lote_Entity lote) throws Exception {
-        System.out.println("DEBUG: Iniciando crearMovimientoLinea");
+    private Lote_Entity procesarAjusteLinea(LineaMovimientoDTO lineaDTO) throws Exception {
+        // Validar datos específicos
+        if (lineaDTO.getIdAlmacenOrigen() == null) {
+            throw new Exception("En ajustes el almacén origen es obligatorio");
+        }
+        if (lineaDTO.getIdAlmacenDestino() != null) {
+            throw new Exception("En ajustes el almacén destino debe ser null");
+        }
+        if (lineaDTO.getIdLoteExistente() == null) {
+            throw new Exception("El lote es obligatorio en ajustes");
+        }
+        if (lineaDTO.getCantidadDelta() == null || lineaDTO.getCantidadDelta() == 0) {
+            throw new Exception("La cantidad delta debe ser diferente de 0 en ajustes");
+        }
+
+        System.out.println("DEBUG - Procesando ajuste para lote ID: " + lineaDTO.getIdLoteExistente());
+        System.out.println("DEBUG - Almacén origen: " + lineaDTO.getIdAlmacenOrigen());
+        System.out.println("DEBUG - Cantidad delta: " + lineaDTO.getCantidadDelta());
+
+        // Obtener el lote existente y retornarlo
+        return lote_Repository.findById(lineaDTO.getIdLoteExistente())
+            .orElseThrow(() -> new Exception("Lote no encontrado con ID: " + lineaDTO.getIdLoteExistente()));
+    }
+
+    /**
+     * Crea la línea de movimiento desde el DTO de línea con las validaciones necesarias
+     */
+    private void crearMovimientoLineaDesdeDTO(LineaMovimientoDTO lineaDTO, Movimiento_Entity movimiento, Lote_Entity lote) throws Exception {
+        System.out.println("DEBUG: Iniciando crearMovimientoLineaDesdeDTO");
         System.out.println("DEBUG: Movimiento ID: " + movimiento.getId());
         System.out.println("DEBUG: Lote ID: " + lote.getId());
-        System.out.println("DEBUG: CantidadDelta: " + dto.getCantidadDelta());
+        System.out.println("DEBUG: CantidadDelta: " + lineaDTO.getCantidadDelta());
 
-        if (dto.getCantidadDelta() == null || dto.getCantidadDelta() == 0) {
+        if (lineaDTO.getCantidadDelta() == null || lineaDTO.getCantidadDelta() == 0) {
             throw new Exception("La cantidad delta es obligatoria y debe ser diferente de 0");
         }
 
@@ -308,22 +357,22 @@ public class Movimiento_Service_Impl implements Movimiento_Service {
 
         // Crear DTO con solo IDs para evitar problemas de contexto de Hibernate
         System.out.println("DEBUG: Creando CrearMovimientoLineaDTO");
-        CrearMovimientoLineaDTO lineaDTO = new CrearMovimientoLineaDTO();
-        lineaDTO.setIdMovimiento(movimiento.getId());
-        lineaDTO.setIdLote(lote.getId());
-        lineaDTO.setCantidadDelta(dto.getCantidadDelta());
-        lineaDTO.setPrecioVenta(dto.getPrecioVenta());
-        lineaDTO.setIdAlmacenOrigen(dto.getIdAlmacenOrigen());
-        lineaDTO.setIdAlmacenDestino(dto.getIdAlmacenDestino());
+        CrearMovimientoLineaDTO crearLineaDTO = new CrearMovimientoLineaDTO();
+        crearLineaDTO.setIdMovimiento(movimiento.getId());
+        crearLineaDTO.setIdLote(lote.getId());
+        crearLineaDTO.setCantidadDelta(lineaDTO.getCantidadDelta());
+        crearLineaDTO.setPrecioVenta(lineaDTO.getPrecioVenta());
+        crearLineaDTO.setIdAlmacenOrigen(lineaDTO.getIdAlmacenOrigen());
+        crearLineaDTO.setIdAlmacenDestino(lineaDTO.getIdAlmacenDestino());
 
-        System.out.println("DEBUG: LineaDTO - idMovimiento: " + lineaDTO.getIdMovimiento());
-        System.out.println("DEBUG: LineaDTO - idLote: " + lineaDTO.getIdLote());
-        System.out.println("DEBUG: LineaDTO - idAlmacenOrigen: " + lineaDTO.getIdAlmacenOrigen());
-        System.out.println("DEBUG: LineaDTO - idAlmacenDestino: " + lineaDTO.getIdAlmacenDestino());
+        System.out.println("DEBUG: LineaDTO - idMovimiento: " + crearLineaDTO.getIdMovimiento());
+        System.out.println("DEBUG: LineaDTO - idLote: " + crearLineaDTO.getIdLote());
+        System.out.println("DEBUG: LineaDTO - idAlmacenOrigen: " + crearLineaDTO.getIdAlmacenOrigen());
+        System.out.println("DEBUG: LineaDTO - idAlmacenDestino: " + crearLineaDTO.getIdAlmacenDestino());
 
         // Usar el servicio que construye la entidad desde IDs
         System.out.println("DEBUG: Llamando a movimientoLinea_Service.crearDesdeDTO");
-        movimientoLinea_Service.crearDesdeDTO(lineaDTO);
+        movimientoLinea_Service.crearDesdeDTO(crearLineaDTO);
         System.out.println("DEBUG: MovimientoLinea creado exitosamente");
     }
 }

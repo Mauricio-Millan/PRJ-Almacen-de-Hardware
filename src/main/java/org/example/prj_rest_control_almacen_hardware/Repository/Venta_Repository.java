@@ -1,5 +1,6 @@
 package org.example.prj_rest_control_almacen_hardware.Repository;
 
+import org.example.prj_rest_control_almacen_hardware.Model.Movimiento_Entity;
 import org.example.prj_rest_control_almacen_hardware.Model.Venta_Entity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -26,4 +27,6 @@ public interface Venta_Repository extends JpaRepository<Venta_Entity, Integer> {
 
     @Query("SELECT v FROM Venta_Entity v WHERE v.estado = true")
     List<Venta_Entity> findByEstadoActivo();
+
+    Optional<Venta_Entity> findByIdMovimiento(Movimiento_Entity movimiento);
 }

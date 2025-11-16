@@ -1,6 +1,7 @@
 package org.example.prj_rest_control_almacen_hardware.Repository;
 
 import org.example.prj_rest_control_almacen_hardware.Model.Compra_Entity;
+import org.example.prj_rest_control_almacen_hardware.Model.Movimiento_Entity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -11,4 +12,5 @@ public interface Compra_Repository extends JpaRepository<Compra_Entity, Long> {
     Optional<Compra_Entity> findById(Long id);
     List<Compra_Entity> findByIdUsuarioId(Long idUsuario);
     List<Compra_Entity> findByIdProveedorId(Long idProveedor);
+    Optional<Compra_Entity> findByIdMovimiento(Movimiento_Entity movimiento);
 }

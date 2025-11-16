@@ -2,6 +2,8 @@ package org.example.prj_rest_control_almacen_hardware.Controller;
 
 
 import org.example.prj_rest_control_almacen_hardware.DTOs.LineaTiempoUsuarioDTO;
+import org.example.prj_rest_control_almacen_hardware.DTOs.LoginRequestDTO;
+import org.example.prj_rest_control_almacen_hardware.DTOs.LoginResponseDTO;
 import org.example.prj_rest_control_almacen_hardware.Model.Usuario_Entity;
 import org.example.prj_rest_control_almacen_hardware.Service.Usuario_Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +45,32 @@ public class Usuario_Controller {
     @DeleteMapping("/{id}")
     public String deleteById(@PathVariable Long id) {
         return usuario_serv.deleteById(id);
+    }
+
+    /**
+     * Endpoint de login con validación de DNI y clave
+     * POST /usuarios/login
+     *
+     * Respuestas:
+     * - 200 OK: Login exitoso con datos del usuario
+     * - 401 UNAUTHORIZED: DNI o clave incorrectos
+     * - 400 BAD REQUEST: Campos vacíos
+     */
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginRequestDTO loginRequest) {
+        LoginResponseDTO response = usuario_serv.loginConValidacion(loginRequest);
+
+        if (response.isSuccess()) {
+            // Login exitoso
+            return ResponseEntity.ok(response);
+        } else {
+            // Error de autenticación
+            if ("CAMPO_VACIO".equals(response.getTipoError())) {
+                return ResponseEntity.badRequest().body(response);
+            } else {
+                return ResponseEntity.status(401).body(response);
+            }
+        }
     }
 
     @GetMapping("/{id}/linea-tiempo")

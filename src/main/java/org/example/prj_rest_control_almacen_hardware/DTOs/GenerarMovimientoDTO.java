@@ -4,36 +4,33 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
+import java.util.List;
 
+/**
+ * DTO para generar un movimiento completo con múltiples líneas
+ * Tipos de Acción:
+ * 1 = Abastecimiento (Compra)
+ * 2 = Transferencia
+ * 3 = Ajuste
+ * 4 = Venta
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class GenerarMovimientoDTO {
-    // Datos del Movimiento
+    // Datos del Movimiento (cabecera)
     private Instant fecha;
     private String referencia;
     private String comentario;
     private Long idUsuario;
-    private Long idTipoAccion; // 1=Abastecimiento, 2=Venta, 3=Transferencia
+    private Long idTipoAccion; // 1=Abastecimiento, 2=Transferencia, 3=Ajuste, 4=Venta
 
     // Datos específicos según tipo de movimiento
     private Long idProveedor; // Para abastecimientos (compras)
     private Long idCliente;   // Para ventas
 
-    // Datos del Lote (para abastecimientos)
-    private Long idProducto;
-    private Integer cantidadLote;
-    private BigDecimal precioUnitario;
-    private LocalDate fechaExpiracion;
-    private Long idLoteExistente; // Para ventas/transferencias se usa un lote existente
-
-    // Datos de MovimientoLinea
-    private Long idAlmacenOrigen;  // null en abastecimientos
-    private Long idAlmacenDestino; // null en ventas
-    private Integer cantidadDelta;
-    private BigDecimal precioVenta; // Para ventas
+    // Lista de líneas de movimiento (productos/lotes)
+    private List<LineaMovimientoDTO> lineas;
 }
 
