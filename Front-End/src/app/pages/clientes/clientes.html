@@ -1,0 +1,279 @@
+<!-- 🔍 Barra de búsqueda -->
+<div class="flex justify-between items-center mb-6">
+  <h2 class="text-2xl font-semibold text-gray-800">Gestionar Clientes</h2>
+  <div class="flex space-x-2">
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      (input)="applyFilter()"
+      placeholder="Buscar cliente..."
+      class="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+    <select
+      [(ngModel)]="statusFilter"
+      (change)="applyFilter()"
+      class="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    >
+      <option value="all">Todos</option>
+      <option value="active">Activos</option>
+      <option value="inactive">Inactivos</option>
+    </select>
+    <button
+      class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg"
+      (click)="openModal()"
+    >
+      + Crear
+    </button>
+  </div>
+</div>
+
+<!-- 🧾 Tabla -->
+<div class="bg-white shadow-md rounded-lg overflow-x-auto">
+  <table class="min-w-full leading-normal">
+    <thead>
+      <tr>
+        <th
+          class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left"
+        >
+          Nombre
+        </th>
+        <th
+          class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left"
+        >
+          RUC
+        </th>
+        <th
+          class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left"
+        >
+          Teléfono
+        </th>
+        <th
+          class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left"
+        >
+          Estado
+        </th>
+        <th
+          class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left"
+        >
+          Acciones
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let cliente of paginatedClientes">
+        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ cliente.nombre }}</td>
+        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ cliente.ruc }}</td>
+        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ cliente.telefono }}</td>
+        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+          <span
+            class="relative inline-block px-3 py-1 font-semibold leading-tight"
+            [ngClass]="cliente.estado ? 'text-green-900' : 'text-red-900'"
+          >
+            <span
+              aria-hidden="true"
+              class="absolute inset-0 rounded-full"
+              [ngClass]="cliente.estado ? 'bg-green-200 opacity-50' : 'bg-red-200 opacity-50'"
+            ></span>
+            <span class="relative">{{ cliente.estado ? 'Activo' : 'Inactivo' }}</span>
+          </span>
+        </td>
+        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+          <ng-container *ngIf="cliente.estado; else inactiveActions">
+            <button class="text-indigo-600 hover:text-indigo-900 mr-3" (click)="openModal(cliente)">
+              Editar
+            </button>
+            <button
+              class="text-red-600 hover:text-red-900"
+              (click)="toggleModal('delete', cliente)"
+            >
+              Inactivar
+            </button>
+          </ng-container>
+          <ng-template #inactiveActions>
+            <div class="flex space-x-2">
+              <button
+                class="text-green-600 hover:text-green-900"
+                (click)="toggleModal('restore', cliente)"
+              >
+                Restaurar
+              </button>
+              <button
+                class="text-red-600 hover:text-red-900"
+                (click)="toggleModal('deletePermanent', cliente)"
+              >
+                Eliminar
+              </button>
+            </div>
+          </ng-template>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 🔸 Paginación -->
+<div class="flex justify-center mt-6 space-x-2" *ngIf="filteredClientes.length > itemsPerPage">
+  <button
+    *ngFor="let page of totalPages"
+    (click)="changePage(page)"
+    [ngClass]="{
+      'bg-indigo-600 text-white': currentPage === page,
+      'bg-gray-200 text-gray-700': currentPage !== page
+    }"
+    class="px-3 py-1 rounded-lg font-medium"
+  >
+    {{ page }}
+  </button>
+</div>
+
+<!-- 🟢 Modal Crear / Editar -->
+<div
+  *ngIf="showModal"
+  class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50"
+>
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+    <h3 class="text-xl font-semibold mb-4">
+      {{ isEditMode ? 'Editar Cliente' : 'Crear Cliente' }}
+    </h3>
+    <form [formGroup]="clienteForm" (ngSubmit)="saveCliente()">
+      <!-- Nombre -->
+      <div class="mb-3">
+        <label class="block text-gray-700 font-medium">Nombre</label>
+        <input
+          formControlName="nombre"
+          type="text"
+          class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"
+          placeholder="Ingrese nombre"
+        />
+        <p
+          *ngIf="clienteForm.get('nombre')?.invalid && clienteForm.get('nombre')?.touched"
+          class="text-red-500 text-sm mt-1"
+        >
+          El nombre es obligatorio y debe tener al menos 3 caracteres.
+        </p>
+      </div>
+
+      <!-- RUC -->
+      <div class="mb-3">
+        <label class="block text-gray-700 font-medium">RUC</label>
+        <input
+          formControlName="ruc"
+          type="text"
+          class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"
+          placeholder="Ingrese RUC (11 dígitos)"
+        />
+        <div class="text-red-500 text-sm mt-1">
+          <p
+            *ngIf="clienteForm.get('ruc')?.hasError('required') && clienteForm.get('ruc')?.touched"
+          >
+            El RUC es obligatorio.
+          </p>
+          <p *ngIf="clienteForm.get('ruc')?.hasError('pattern') && clienteForm.get('ruc')?.touched">
+            El RUC debe contener exactamente 11 dígitos numéricos.
+          </p>
+          <p
+            *ngIf="clienteForm.get('ruc')?.hasError('duplicate') && clienteForm.get('ruc')?.touched"
+          >
+            Este RUC ya está registrado.
+          </p>
+        </div>
+      </div>
+
+      <!-- Teléfono -->
+      <div class="mb-3">
+        <label class="block text-gray-700 font-medium">Teléfono</label>
+        <input
+          formControlName="telefono"
+          type="text"
+          class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"
+          placeholder="Ingrese teléfono"
+        />
+        <p
+          *ngIf="clienteForm.get('telefono')?.invalid && clienteForm.get('telefono')?.touched"
+          class="text-red-500 text-sm mt-1"
+        >
+          El teléfono es obligatorio y debe tener al menos 6 caracteres.
+        </p>
+      </div>
+
+      <div class="flex justify-end space-x-2 mt-6">
+        <button
+          type="button"
+          class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg"
+          (click)="closeModal()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="clienteForm.invalid || loading"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg"
+        >
+          {{ isEditMode ? 'Guardar Cambios' : 'Crear' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 🔴 Modal Inactivar / Restaurar / Eliminar -->
+<div
+  *ngIf="showDeleteModal || showRestoreModal"
+  class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50"
+>
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
+    <h3 class="text-lg font-semibold mb-4">
+      {{
+        showRestoreModal
+          ? '¿Restaurar cliente?'
+          : selectedCliente?.estado
+          ? '¿Inactivar cliente?'
+          : '¿Eliminar cliente?'
+      }}
+    </h3>
+    <p class="text-gray-600 mb-6">
+      <ng-container *ngIf="showRestoreModal">
+        El cliente <strong>{{ selectedCliente?.nombre }}</strong> volverá a estar activo.
+      </ng-container>
+      <ng-container *ngIf="!showRestoreModal && selectedCliente?.estado">
+        El cliente <strong>{{ selectedCliente?.nombre }}</strong> se marcará como inactivo.
+      </ng-container>
+      <ng-container *ngIf="!showRestoreModal && !selectedCliente?.estado">
+        El cliente <strong>{{ selectedCliente?.nombre }}</strong> será eliminado permanentemente.
+      </ng-container>
+    </p>
+    <div class="flex justify-end space-x-2">
+      <button
+        class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg"
+        (click)="
+          toggleModal(
+            showRestoreModal ? 'restore' : selectedCliente?.estado ? 'delete' : 'deletePermanent'
+          )
+        "
+      >
+        Cancelar
+      </button>
+      <button
+        *ngIf="showRestoreModal"
+        class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg"
+        (click)="restoreClienteConfirmed()"
+      >
+        Restaurar
+      </button>
+      <button
+        *ngIf="!showRestoreModal && selectedCliente?.estado"
+        class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg"
+        (click)="deleteClienteConfirmed()"
+      >
+        Inactivar
+      </button>
+      <button
+        *ngIf="!showRestoreModal && !selectedCliente?.estado"
+        class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg"
+        (click)="deleteClientePermanently()"
+      >
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div>

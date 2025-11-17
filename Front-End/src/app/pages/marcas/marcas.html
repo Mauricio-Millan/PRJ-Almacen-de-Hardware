@@ -1,0 +1,134 @@
+<!-- 🔍 Barra de búsqueda -->
+<div class="flex justify-between items-center mb-6">
+  <h2 class="text-2xl font-semibold text-gray-800">Gestionar Marcas</h2>
+  <div class="flex space-x-2">
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      (input)="applyFilter()"
+      placeholder="Buscar marca..."
+      class="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+    <select
+      [(ngModel)]="statusFilter"
+      (change)="applyFilter()"
+      class="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    >
+      <option value="all">Todos</option>
+      <option value="active">Activos</option>
+      <option value="inactive">Inactivos</option>
+    </select>
+    <button
+      class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg"
+      (click)="openModal()"
+    >
+      + Crear
+    </button>
+  </div>
+</div>
+
+<!-- 🧾 Tabla -->
+<div class="bg-white shadow-md rounded-lg overflow-x-auto">
+  <table class="min-w-full leading-normal">
+    <thead>
+      <tr>
+        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Nombre</th>
+        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Estado</th>
+        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let marca of paginatedMarcas">
+        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ marca.nombre }}</td>
+        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+          <span class="relative inline-block px-3 py-1 font-semibold leading-tight"
+                [ngClass]="marca.estado ? 'text-green-900' : 'text-red-900'">
+            <span aria-hidden="true" class="absolute inset-0 rounded-full"
+                  [ngClass]="marca.estado ? 'bg-green-200 opacity-50' : 'bg-red-200 opacity-50'"></span>
+            <span class="relative">{{ marca.estado ? 'Activo' : 'Inactivo' }}</span>
+          </span>
+        </td>
+        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+          <!-- Si está activo: editar e inactivar -->
+          <ng-container *ngIf="marca.estado; else inactiveActions">
+            <button class="text-indigo-600 hover:text-indigo-900 mr-3" (click)="openModal(marca)">Editar</button>
+            <button class="text-red-600 hover:text-red-900" (click)="toggleModal('delete', marca)">Inactivar</button>
+          </ng-container>
+
+          <!-- Si está inactivo: restaurar y eliminar permanente -->
+          <ng-template #inactiveActions>
+            <button class="text-green-600 hover:text-green-900 mr-3" (click)="toggleModal('restore', marca)">Restaurar</button>
+            <button class="text-red-800 hover:text-red-900" (click)="toggleModal('permanent', marca)">Eliminar</button>
+          </ng-template>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 🔸 Paginación -->
+<div class="flex justify-center mt-6 space-x-2" *ngIf="filteredMarcas.length > itemsPerPage">
+  <button *ngFor="let page of totalPages"
+          (click)="changePage(page)"
+          [ngClass]="{ 'bg-indigo-600 text-white': currentPage === page, 'bg-gray-200 text-gray-700': currentPage !== page }"
+          class="px-3 py-1 rounded-lg font-medium">{{ page }}</button>
+</div>
+
+<!-- 🟢 Modal Crear / Editar -->
+<div *ngIf="showModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+    <h3 class="text-xl font-semibold mb-4">{{ isEditMode ? 'Editar Marca' : 'Crear Marca' }}</h3>
+    <form [formGroup]="marcaForm" (ngSubmit)="saveMarca()">
+      <div class="mb-3">
+        <label class="block text-gray-700 font-medium">Nombre</label>
+        <input formControlName="nombre" type="text" placeholder="Ingrese nombre"
+               class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"/>
+        <p *ngIf="marcaForm.get('nombre')?.invalid && marcaForm.get('nombre')?.touched" class="text-red-500 text-sm mt-1">
+          El nombre es obligatorio y debe tener al menos 2 caracteres.
+        </p>
+      </div>
+      <div class="flex justify-end space-x-2 mt-6">
+        <button type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg" (click)="closeModal()">Cancelar</button>
+        <button type="submit" [disabled]="marcaForm.invalid || loading" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg">
+          {{ isEditMode ? 'Guardar Cambios' : 'Crear' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 🔴 Modal Inactivar -->
+<div *ngIf="showDeleteModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
+    <h3 class="text-lg font-semibold mb-4">¿Inactivar marca?</h3>
+    <p class="text-gray-600 mb-6">La marca <strong>{{ selectedMarca?.nombre }}</strong> se marcará como inactiva.</p>
+    <div class="flex justify-end space-x-2">
+      <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg" (click)="toggleModal('delete')">Cancelar</button>
+      <button class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg" (click)="deleteMarcaConfirmed()">Inactivar</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🟢 Modal Restaurar -->
+<div *ngIf="showRestoreModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
+    <h3 class="text-lg font-semibold mb-4">¿Restaurar marca?</h3>
+    <p class="text-gray-600 mb-6">La marca <strong>{{ selectedMarca?.nombre }}</strong> volverá a estar activa.</p>
+    <div class="flex justify-end space-x-2">
+      <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg" (click)="toggleModal('restore')">Cancelar</button>
+      <button class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg" (click)="restoreMarcaConfirmed()">Restaurar</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🔴 Modal Eliminar Permanente -->
+<div *ngIf="showPermanentDeleteModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
+    <h3 class="text-lg font-semibold mb-4">¿Eliminar permanentemente?</h3>
+    <p class="text-gray-600 mb-6">La marca <strong>{{ selectedMarca?.nombre }}</strong> será eliminada de forma permanente.</p>
+    <div class="flex justify-end space-x-2">
+      <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg" (click)="toggleModal('permanent')">Cancelar</button>
+      <button class="bg-red-800 hover:bg-red-900 text-white py-2 px-4 rounded-lg" (click)="deleteMarcaPermanentConfirmed()">Eliminar</button>
+    </div>
+  </div>
+</div>

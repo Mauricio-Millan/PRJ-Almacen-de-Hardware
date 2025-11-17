@@ -1,0 +1,113 @@
+<!-- Sección de Resumen de Ventas en una tarjeta principal -->
+<div class="bg-white p-6 rounded-lg shadow-md mb-6">
+  
+  <!-- Encabezado de la sección -->
+  <div class="flex justify-between items-center mb-4">
+    <div>
+      <h2 class="text-xl font-semibold text-gray-800">Métricas</h2>
+      <p class="text-sm text-gray-500">Resumen</p>
+    </div>
+    <button class="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm">
+      <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+      Export
+    </button>
+  </div>
+
+  <!-- Contenedor de las 4 tarjetas de estadísticas -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    <!-- Tarjeta 1: Total Sales -->
+    <div class="bg-pink-100 p-4 rounded-lg flex items-center">
+      <div class="bg-pink-200 p-3 rounded-lg mr-4">
+        <svg class="w-6 h-6 text-pink-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18.5A6.5 6.5 0 1012 5.5a6.5 6.5 0 000 13z"></path></svg>
+      </div>
+      <div>
+        <p class="text-2xl font-bold">$1k</p>
+        <p class="text-sm text-gray-600">Total Sales</p>
+        <p class="text-green-500 text-xs mt-1">+8% from yesterday</p>
+      </div>
+    </div>
+
+    <!-- Tarjeta 2: Total Order -->
+    <div class="bg-yellow-100 p-4 rounded-lg flex items-center">
+      <div class="bg-yellow-200 p-3 rounded-lg mr-4">
+        <svg class="w-6 h-6 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+      </div>
+      <div>
+        <p class="text-2xl font-bold">300</p>
+        <p class="text-sm text-gray-600">Total Order</p>
+        <p class="text-green-500 text-xs mt-1">+5% from yesterday</p>
+      </div>
+    </div>
+
+    <!-- Tarjeta 3: Product Sold -->
+    <div class="bg-green-100 p-4 rounded-lg flex items-center">
+      <div class="bg-green-200 p-3 rounded-lg mr-4">
+        <svg class="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+      </div>
+      <div>
+        <p class="text-2xl font-bold">5</p>
+        <p class="text-sm text-gray-600">Product Sold</p>
+        <p class="text-green-500 text-xs mt-1">+1.2% from yesterday</p>
+      </div>
+    </div>
+
+    <!-- Tarjeta 4: New Customers -->
+    <div class="bg-purple-100 p-4 rounded-lg flex items-center">
+      <div class="bg-purple-200 p-3 rounded-lg mr-4">
+        <svg class="w-6 h-6 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+      </div>
+      <div>
+        <p class="text-2xl font-bold">8</p>
+        <p class="text-sm text-gray-600">New Customers</p>
+        <p class="text-red-500 text-xs mt-1">-0.5% from yesterday</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- Gráficos -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <div class="bg-white p-6 rounded-lg shadow-md">
+    <h3 class="text-lg font-semibold mb-4">Total Revenue</h3>
+    <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="barChartType"></canvas>
+  </div>
+  <div class="bg-white p-6 rounded-lg shadow-md">
+    <h3 class="text-lg font-semibold mb-4">Target vs Reality</h3>
+    <canvas baseChart [data]="targetChartData" [options]="barChartOptions" [type]="barChartType"></canvas>
+  </div>
+</div>
+
+
+<!-- Listas y más gráficos -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
+    <h3 class="text-lg font-semibold mb-4">Mejores Productos</h3>
+    <div *ngFor="let product of bestProducts; let i = index" class="flex items-center justify-between py-3 border-b last:border-b-0">
+      <div class="flex items-center w-1/3">
+        <span class="text-gray-500 font-semibold mr-4">0{{i + 1}}</span>
+        <span>{{ product.name }}</span>
+      </div>
+      <div class="w-1/3">
+        <div class="bg-gray-200 rounded-full h-2.5">
+          <div class="bg-blue-600 h-2.5 rounded-full" [style.width.%]="product.popularity"></div>
+        </div>
+      </div>
+      <span class="text-sm font-semibold p-1 px-3 rounded-md text-center w-16" 
+            [ngClass]="{
+              'bg-blue-100 text-blue-800': product.sales > 40,
+              'bg-green-100 text-green-800': product.sales > 25 && product.sales <= 40,
+              'bg-purple-100 text-purple-800': product.sales > 15 && product.sales <= 25,
+              'bg-orange-100 text-orange-800': product.sales <= 15
+            }">
+        {{ product.sales }}%
+      </span>
+    </div>
+  </div>
+  <div class="bg-white p-6 rounded-lg shadow-md">
+    <h3 class="text-lg font-semibold mb-4">Volume vs Service Level</h3>
+    <canvas baseChart [data]="volumeChartData" [options]="barChartOptions" [type]="barChartType"></canvas>
+  </div>
+</div>
