@@ -7,11 +7,13 @@ import { Producto } from '../../core/models/producto';
 import { Proveedor } from '../../core/models/proveedor';
 import { Almacen } from '../../core/models/almacen';
 import { Usuario } from '../../core/models/usuario';
+import { MovimientoLinea } from '../../core/models/movimiento-linea';
 import { ComprasService } from '../../core/services/compras';
 import { ProductosService } from '../../core/services/producto';
 import { Proveedores } from '../../core/services/proveedores';
 import { Almacenes } from '../../core/services/almacenes';
 import { MovimientosService } from '../../core/services/movimientos';
+import { MovimientoLineasService } from '../../core/services/movimiento-lineas';
 import { UsuariosService } from '../../core/services/usuario';
 import { MovimientoGenerarRequest, LineaMovimientoRequest } from '../../core/models/movimiento-generar-request';
 import { AuthService } from '../../core/services/auth.service';
@@ -47,6 +49,12 @@ export class ComprasComponent implements OnInit {
   productosFiltrados = signal<Producto[]>([]);
   busquedaProducto = signal('');
   
+  // Modal de detalle de compra
+  modalDetalle = signal(false);
+  detalleLineas = signal<MovimientoLinea[]>([]);
+  isLoadingDetalle = signal(false);
+  compraSeleccionada = signal<Compra | null>(null);
+  
   // Datos del formulario de compra
   idProveedor = signal<number | null>(null);
   referencia = signal('');
@@ -78,12 +86,16 @@ export class ComprasComponent implements OnInit {
   isLoading = signal(false);
   isSaving = signal(false);
 
+  // Math para uso en template
+  Math = Math;
+
   constructor(
     private comprasService: ComprasService,
     private productosService: ProductosService,
     private proveedoresService: Proveedores,
     private almacenesService: Almacenes,
     private movimientosService: MovimientosService,
+    private movimientoLineasService: MovimientoLineasService,
     private usuariosService: UsuariosService,
     private authService: AuthService
   ) {}
@@ -387,5 +399,45 @@ export class ComprasComponent implements OnInit {
         }
       });
     }
+  }
+
+  // --- VER DETALLE DE COMPRA ---
+  
+  abrirModalDetalle(compra: Compra) {
+    const idMovimiento = this.obtenerIdMovimiento(compra);
+    if (!idMovimiento) {
+      alert('No se puede obtener el ID del movimiento');
+      return;
+    }
+
+    this.compraSeleccionada.set(compra);
+    this.modalDetalle.set(true);
+    this.isLoadingDetalle.set(true);
+
+    this.movimientoLineasService.getMovimientoLineasByMovimiento(idMovimiento).subscribe({
+      next: (lineas) => {
+        this.detalleLineas.set(lineas);
+        this.isLoadingDetalle.set(false);
+      },
+      error: (error) => {
+        console.error('Error al cargar detalle:', error);
+        this.isLoadingDetalle.set(false);
+        alert('Error al cargar el detalle de la compra');
+      }
+    });
+  }
+
+  cerrarModalDetalle() {
+    this.modalDetalle.set(false);
+    this.detalleLineas.set([]);
+    this.compraSeleccionada.set(null);
+  }
+
+  calcularTotalDetalle(): number {
+    return this.detalleLineas().reduce((sum, linea) => {
+      const cantidad = Math.abs(linea.cantidadDelta);
+      const precio = linea.idLote.precioUnit || 0;
+      return sum + (cantidad * precio);
+    }, 0);
   }
 }

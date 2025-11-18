@@ -24,6 +24,11 @@ public class MovimientoLinea_Controller {
         return movimientoLinea_Service.findById(id);
     }
 
+    @GetMapping("/movimiento/{idMovimiento}")
+    public List<MovimientoLinea_Entity> findByIdMovimiento(@PathVariable Long idMovimiento) {
+        return movimientoLinea_Service.findByIdMovimiento(idMovimiento);
+    }
+
     @PostMapping
     public MovimientoLinea_Entity save(@RequestBody MovimientoLinea_Entity movimientoLinea) {
         movimientoLinea.setId(null);

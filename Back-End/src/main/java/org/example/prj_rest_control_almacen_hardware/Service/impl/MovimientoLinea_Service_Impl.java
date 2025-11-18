@@ -150,4 +150,9 @@ public class MovimientoLinea_Service_Impl implements MovimientoLinea_Service {
     public Optional<MovimientoLinea_Entity> findById(Long id) {
         return movimientoLinea_Repository.findById(id);
     }
+
+    @Override
+    public List<MovimientoLinea_Entity> findByIdMovimiento(Long idMovimiento) {
+        return movimientoLinea_Repository.findByIdMovimiento_Id(idMovimiento);
+    }
 }

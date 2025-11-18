@@ -31,4 +31,8 @@ export class MovimientoLineasService {
   deleteMovimientoLinea(id: number): Observable<any> {
     return this.http.delete(`${this.baseUrl}/${id}`);
   }
+
+  getMovimientoLineasByMovimiento(idMovimiento: number): Observable<MovimientoLinea[]> {
+    return this.http.get<MovimientoLinea[]>(`${this.baseUrl}/movimiento/${idMovimiento}`);
+  }
 }

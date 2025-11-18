@@ -1,0 +1,113 @@
+[
+  {
+    "id": 0,
+    "idMovimiento": {
+      "id": 0,
+      "fecha": "2025-11-18T14:36:01.401Z",
+      "referencia": "string",
+      "comentario": "string",
+      "createdAt": "2025-11-18T14:36:01.401Z",
+      "estado": true,
+      "idUsuario": {
+        "id": 0,
+        "nombre": "string",
+        "clave": "string",
+        "dni": "string",
+        "fechaNacimiento": "2025-11-18",
+        "idRol": {
+          "id": 0,
+          "nombre": "string",
+          "estado": true
+        },
+        "estado": true
+      },
+      "idTipoAccion": {
+        "id": 0,
+        "nombre": "string"
+      }
+    },
+    "idAlmacenOrigen": {
+      "id": 0,
+      "nombre": "string",
+      "direccion": "string",
+      "telefono": "string",
+      "estado": true
+    },
+    "idAlmacenDestino": {
+      "id": 0,
+      "nombre": "string",
+      "direccion": "string",
+      "telefono": "string",
+      "estado": true
+    },
+    "idLote": {
+      "id": 0,
+      "idCompra": {
+        "id": 0,
+        "fecha": "2025-11-18T14:36:01.401Z",
+        "estado": true,
+        "idUsuario": {
+          "id": 0,
+          "nombre": "string",
+          "clave": "string",
+          "dni": "string",
+          "fechaNacimiento": "2025-11-18",
+          "idRol": {
+            "id": 0,
+            "nombre": "string",
+            "estado": true
+          },
+          "estado": true
+        },
+        "idMovimiento": {
+          "id": 0,
+          "fecha": "2025-11-18T14:36:01.402Z",
+          "referencia": "string",
+          "comentario": "string",
+          "createdAt": "2025-11-18T14:36:01.402Z",
+          "estado": true,
+          "idUsuario": {
+            "id": 0,
+            "nombre": "string",
+            "clave": "string",
+            "dni": "string",
+            "fechaNacimiento": "2025-11-18",
+            "idRol": {
+              "id": 0,
+              "nombre": "string",
+              "estado": true
+            },
+            "estado": true
+          },
+          "idTipoAccion": {
+            "id": 0,
+            "nombre": "string"
+          }
+        },
+        "idProveedor": {
+          "id": 0,
+          "nombre": "string",
+          "ruc": "string",
+          "telefono": "string",
+          "estado": true
+        }
+      },
+      "cantidad": 0,
+      "precioUnit": 0,
+      "fechaExpiracion": "2025-11-18",
+      "estado": true,
+      "idProducto": {
+        "id": 0,
+        "nombre": "string",
+        "idMarca": {
+          "id": 0,
+          "nombre": "string",
+          "estado": true
+        },
+        "estado": true
+      }
+    },
+    "cantidadDelta": 0,
+    "precioVenta": 0
+  }
+]

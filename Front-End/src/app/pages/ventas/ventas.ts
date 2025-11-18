@@ -7,11 +7,13 @@ import { Cliente } from '../../core/models/cliente';
 import { Almacen } from '../../core/models/almacen';
 import { ProductoDetalle } from '../../core/models/almacendetalle';
 import { Usuario } from '../../core/models/usuario';
+import { MovimientoLinea } from '../../core/models/movimiento-linea';
 import { VentasService } from '../../core/services/ventas';
 import { ClientesService } from '../../core/services/cliente';
 import { Almacenes } from '../../core/services/almacenes';
 import { AlmacendetalleService } from '../../core/services/almacendetalleservice';
 import { MovimientosService } from '../../core/services/movimientos';
+import { MovimientoLineasService } from '../../core/services/movimiento-lineas';
 import { UsuariosService } from '../../core/services/usuario';
 import { AuthService } from '../../core/services/auth.service';
 import { MovimientoGenerarRequest, LineaMovimientoRequest } from '../../core/models/movimiento-generar-request';
@@ -48,6 +50,12 @@ export class VentasComponent implements OnInit {
   productosFiltrados = signal<ProductoDetalle[]>([]);
   busquedaProducto = signal('');
   
+  // Modal de detalle de venta
+  modalDetalle = signal(false);
+  detalleLineas = signal<MovimientoLinea[]>([]);
+  isLoadingDetalle = signal(false);
+  ventaSeleccionada = signal<Venta | null>(null);
+  
   // Datos del formulario de venta
   idCliente = signal<number | null>(null);
   referencia = signal('');
@@ -78,12 +86,16 @@ export class VentasComponent implements OnInit {
   isSaving = signal(false);
   isLoadingLotes = signal(false);
 
+  // Math para uso en template
+  Math = Math;
+
   constructor(
     private ventasService: VentasService,
     private clientesService: ClientesService,
     private almacenesService: Almacenes,
     private almacenDetalleService: AlmacendetalleService,
     private movimientosService: MovimientosService,
+    private movimientoLineasService: MovimientoLineasService,
     private usuariosService: UsuariosService,
     private authService: AuthService
   ) {}
@@ -391,5 +403,45 @@ export class VentasComponent implements OnInit {
         alert(`Error al realizar la venta: ${mensajeError}`);
       }
     });
+  }
+
+  // --- VER DETALLE DE VENTA ---
+  
+  abrirModalDetalle(venta: Venta) {
+    const idMovimiento = this.obtenerIdMovimiento(venta);
+    if (!idMovimiento) {
+      alert('No se puede obtener el ID del movimiento');
+      return;
+    }
+
+    this.ventaSeleccionada.set(venta);
+    this.modalDetalle.set(true);
+    this.isLoadingDetalle.set(true);
+
+    this.movimientoLineasService.getMovimientoLineasByMovimiento(idMovimiento).subscribe({
+      next: (lineas) => {
+        this.detalleLineas.set(lineas);
+        this.isLoadingDetalle.set(false);
+      },
+      error: (error) => {
+        console.error('Error al cargar detalle:', error);
+        this.isLoadingDetalle.set(false);
+        alert('Error al cargar el detalle de la venta');
+      }
+    });
+  }
+
+  cerrarModalDetalle() {
+    this.modalDetalle.set(false);
+    this.detalleLineas.set([]);
+    this.ventaSeleccionada.set(null);
+  }
+
+  calcularTotalDetalle(): number {
+    return this.detalleLineas().reduce((sum, linea) => {
+      const cantidad = Math.abs(linea.cantidadDelta);
+      const precio = linea.precioVenta || 0;
+      return sum + (cantidad * precio);
+    }, 0);
   }
 }

@@ -17,4 +17,7 @@ public interface MovimientoLinea_Service {
 
     // Método para crear desde DTO con IDs
     MovimientoLinea_Entity crearDesdeDTO(CrearMovimientoLineaDTO dto) throws Exception;
+
+    // Método para recuperar líneas de movimiento por ID de movimiento
+    List<MovimientoLinea_Entity> findByIdMovimiento(Long idMovimiento);
 }
