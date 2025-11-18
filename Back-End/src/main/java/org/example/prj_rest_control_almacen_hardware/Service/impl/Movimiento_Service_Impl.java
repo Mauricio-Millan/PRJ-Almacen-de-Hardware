@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
@@ -273,7 +274,7 @@ public class Movimiento_Service_Impl implements Movimiento_Service {
                     nuevaVenta.setIdUsuario(usuario);
                     nuevaVenta.setIdMovimiento(movimiento);
                     nuevaVenta.setIdCliente(cliente);
-                    nuevaVenta.setFecha(LocalDate.now());
+                    nuevaVenta.setFecha(Instant.now());
                     nuevaVenta.setEstado(true);
                     return venta_Repository.save(nuevaVenta);
                 } catch (Exception e) {

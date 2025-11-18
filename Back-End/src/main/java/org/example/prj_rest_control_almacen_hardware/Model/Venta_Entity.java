@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 @NoArgsConstructor
@@ -30,7 +31,7 @@ public class Venta_Entity {
     private Cliente_Entity idCliente;
 
     @Column(name = "fecha")
-    private LocalDate fecha;
+    private Instant fecha;
 
     @ColumnDefault("1")
     @Column(name = "estado")
