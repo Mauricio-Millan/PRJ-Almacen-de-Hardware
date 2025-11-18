@@ -1,6 +1,7 @@
 package org.example.prj_rest_control_almacen_hardware.Service;
 
 
+import org.example.prj_rest_control_almacen_hardware.DTOs.HistorialLoteDTO;
 import org.example.prj_rest_control_almacen_hardware.Model.Lote_Entity;
 
 import java.util.List;
@@ -16,4 +17,6 @@ public interface Lote_Service {
     Optional<Lote_Entity> findById(Long id);
     List<Lote_Entity> findByIdCompraId(Long idCompra);
     List<Lote_Entity> findByIdProductoId(Long idProducto);
+    //Historial de movimientos
+    HistorialLoteDTO obtenerHistorialMovimientos(Long idLote);
 }
