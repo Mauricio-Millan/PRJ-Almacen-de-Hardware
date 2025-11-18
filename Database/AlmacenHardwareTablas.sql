@@ -138,7 +138,7 @@ CREATE TABLE [Venta] (
   [id_usuario] int,
   [id_movimiento] int,
   [id_cliente] int,
-  [fecha] date,
+  [fecha] DATETIMEOFFSET,
   [estado] bit default 1
 )
 GO
@@ -262,7 +262,8 @@ BEGIN
         INNER JOIN Movimiento m ON i.id_movimiento = m.id
         WHERE i.id_almacen_origen IS NOT NULL
           AND m.id_tipo_accion IN (2, 3, 4)
-          AND i.cantidad_delta > ISNULL((
+          AND i.cantidad_delta < 0
+          AND ABS(i.cantidad_delta) > ISNULL((
                 SELECT ca.stock
                 FROM ContenidoAlmacen ca
                 WHERE ca.id_almacen = i.id_almacen_origen
@@ -281,11 +282,11 @@ BEGIN
         FROM inserted i
         INNER JOIN Movimiento m ON i.id_movimiento = m.id
         INNER JOIN Lote l ON i.id_lote = l.id
-        INNER JOIN ContenidoAlmacen ca ON ca.id_lote = i.id_lote AND ca.id_almacen = i.id_almacen_destino
+        LEFT JOIN ContenidoAlmacen ca ON ca.id_lote = i.id_lote AND ca.id_almacen = i.id_almacen_origen
         WHERE m.id_tipo_accion = 3
-          AND i.id_almacen_destino IS NOT NULL
+          AND i.id_almacen_origen IS NOT NULL
           AND i.cantidad_delta > 0
-          AND (ca.stock + i.cantidad_delta) > l.cantidad
+          AND (ISNULL(ca.stock, 0) + i.cantidad_delta) > l.cantidad
     )
     BEGIN
         RAISERROR('El ajuste positivo no puede superar la cantidad total establecida en el lote.', 16, 1);
@@ -303,7 +304,6 @@ BEGIN
     FROM inserted;
 
     -- Abastecimiento: crear o actualizar stock en el almacén destino
-    -- Si el lote ya existe en el almacén, se acumula el stock
     MERGE INTO ContenidoAlmacen AS target
     USING (
         SELECT i.id_almacen_destino, i.id_lote, i.cantidad_delta
@@ -319,16 +319,16 @@ BEGIN
         INSERT (id_almacen, id_lote, stock)
         VALUES (source.id_almacen_destino, source.id_lote, source.cantidad_delta);
 
-    -- Actualizar stock en almacén de origen para movimientos, ajustes y ventas
+    -- Traslados: restar de origen
     UPDATE ca
     SET ca.stock = ca.stock - i.cantidad_delta
     FROM ContenidoAlmacen ca
     INNER JOIN inserted i ON ca.id_almacen = i.id_almacen_origen AND ca.id_lote = i.id_lote
     INNER JOIN Movimiento m ON i.id_movimiento = m.id
     WHERE i.id_almacen_origen IS NOT NULL
-      AND m.id_tipo_accion IN (2, 3, 4);
+      AND m.id_tipo_accion = 2;
 
-    -- Movimientos: gestionar destino
+    -- Traslados: agregar a destino
     MERGE INTO ContenidoAlmacen AS target
     USING (
         SELECT i.id_almacen_destino, i.id_lote, i.cantidad_delta
@@ -344,27 +344,36 @@ BEGIN
         INSERT (id_almacen, id_lote, stock)
         VALUES (source.id_almacen_destino, source.id_lote, source.cantidad_delta);
 
-    -- Ajustes positivos: actualizar destino
+    -- Ajustes: gestionar almacén origen (puede incrementar o decrementar)
     MERGE INTO ContenidoAlmacen AS target
     USING (
-        SELECT i.id_almacen_destino, i.id_lote, i.cantidad_delta
+        SELECT i.id_almacen_origen, i.id_lote, i.cantidad_delta
         FROM inserted i
         INNER JOIN Movimiento m ON i.id_movimiento = m.id
         WHERE m.id_tipo_accion = 3
-          AND i.id_almacen_destino IS NOT NULL
-          AND i.cantidad_delta > 0
+          AND i.id_almacen_origen IS NOT NULL
     ) AS source
-    ON (target.id_almacen = source.id_almacen_destino AND target.id_lote = source.id_lote)
+    ON (target.id_almacen = source.id_almacen_origen AND target.id_lote = source.id_lote)
     WHEN MATCHED THEN
         UPDATE SET target.stock = target.stock + source.cantidad_delta
-    WHEN NOT MATCHED THEN
+    WHEN NOT MATCHED AND source.cantidad_delta > 0 THEN
         INSERT (id_almacen, id_lote, stock)
-        VALUES (source.id_almacen_destino, source.id_lote, source.cantidad_delta);
+        VALUES (source.id_almacen_origen, source.id_lote, source.cantidad_delta);
+
+    -- Ventas/Consumos: restar de origen
+    UPDATE ca
+    SET ca.stock = ca.stock - i.cantidad_delta
+    FROM ContenidoAlmacen ca
+    INNER JOIN inserted i ON ca.id_almacen = i.id_almacen_origen AND ca.id_lote = i.id_lote
+    INNER JOIN Movimiento m ON i.id_movimiento = m.id
+    WHERE i.id_almacen_origen IS NOT NULL
+      AND m.id_tipo_accion = 4;
 
     -- Limpiar CONTEXT_INFO
     SET CONTEXT_INFO 0x0;
 END
 GO
+
 
 
 SELECT *
@@ -462,3 +471,11 @@ VALUES (4, 1, NULL, 3, 8, 1500.00);
 --- Revision de stock de almacen origen y destino
 SELECT * FROM ContenidoAlmacen WHERE id_almacen IN (1) AND id_lote = 10;
 
+select * from Usuario
+
+---- Prueba de Ajustes
+INSERT INTO Movimiento (fecha, id_usuario, id_tipo_accion, referencia, comentario, created_at)
+VALUES (GETDATE(), 1, 3, 'Prueba de Ajuste positivo', 'ajuste positivo', GETDATE());
+select * from Movimiento
+INSERT INTO MovimientoLinea (id_movimiento, id_almacen_origen, id_almacen_destino, id_lote, cantidad_delta, Precio_Venta)
+VALUES (77, 2, NULL, 20, 30, 1500.00);

@@ -1,5 +1,6 @@
 USE DBRESTALMACEN
 GO
+-- ejecutar despues de crear tablas y triggers
 
 -- =============================================
 -- Procedimiento: PA_ConsultarContenidoAlmacenDetallado
@@ -279,6 +280,175 @@ BEGIN
         Cantidad_Operaciones DESC;
 END
 GO
+--siguiente sp
+
+-- Procedimiento para obtener el historial de movimientos de un lote específico
+CREATE OR ALTER PROCEDURE PA_ObtenerHistorialMovimientosLote
+    @id_lote INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validar si el lote existe
+    IF NOT EXISTS (SELECT 1 FROM Lote WHERE id = @id_lote)
+    BEGIN
+        RAISERROR('El lote con ID %d no existe', 16, 1, @id_lote);
+        RETURN;
+    END
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Información principal del lote
+        SELECT
+            l.id AS id_lote,
+            p.nombre AS producto,
+            p.id AS id_producto,
+            m.nombre AS marca,
+            l.precio_unit,
+            l.fecha_expiracion,
+            CONVERT(VARCHAR(10), l.fecha_expiracion, 103) AS fecha_expiracion_formato,
+            l.cantidad AS cantidad_original,
+            c.id AS id_compra,
+            c.fecha AS fecha_compra,
+            CONVERT(VARCHAR(10), c.fecha, 103) AS fecha_compra_formato,
+            pr.nombre AS proveedor
+        FROM
+            Lote l
+            INNER JOIN Producto p ON l.id_producto = p.id
+            INNER JOIN Compra c ON l.id_compra = c.id
+            INNER JOIN Proveedor pr ON c.id_proveedor = pr.id
+            LEFT JOIN Marca m ON p.id_marca = m.id
+        WHERE
+            l.id = @id_lote;
+
+        -- Historial cronológico detallado de todos los movimientos del lote
+        SELECT
+            ROW_NUMBER() OVER (ORDER BY m.fecha, ml.id) AS secuencia,
+            ml.id AS id_movimiento_linea,
+            m.id AS id_movimiento,
+            m.fecha AS fecha_movimiento,
+            CONVERT(VARCHAR(10), m.fecha, 103) + ' ' + CONVERT(VARCHAR(8), m.fecha, 108) AS fecha_movimiento_formato,
+            ta.nombre AS tipo_accion,
+            ta.id AS id_tipo_accion,
+            u.nombre AS usuario,
+            u.id AS id_usuario,
+            ml.cantidad_delta AS cantidad_movida,
+            ml.cantidad_delta * CASE
+                WHEN ta.id = 2 AND a_destino.id IS NULL THEN -1
+                ELSE 1
+            END AS cantidad_con_signo,
+            a_origen.nombre AS almacen_origen,
+            a_origen.id AS id_almacen_origen,
+            a_destino.nombre AS almacen_destino,
+            a_destino.id AS id_almacen_destino,
+            CASE
+                WHEN ta.id = 1 THEN 'Entrada inicial' -- Abastecimiento
+                WHEN ta.id = 2 AND a_origen.id IS NOT NULL AND a_destino.id IS NOT NULL THEN 'Traslado entre almacenes'
+                WHEN ta.id = 2 AND a_origen.id IS NULL THEN 'Entrada'
+                WHEN ta.id = 2 AND a_destino.id IS NULL THEN 'Salida'
+                WHEN ta.id = 3 THEN 'Ajuste de inventario'
+                ELSE 'Otro'
+            END AS tipo_movimiento,
+            m.referencia,
+            m.comentario,
+            m.created_at AS fecha_registro,
+            CONVERT(VARCHAR(10), m.created_at, 103) + ' ' + CONVERT(VARCHAR(8), m.created_at, 108) AS fecha_registro_formato
+        FROM
+            MovimientoLinea ml
+            INNER JOIN Movimiento m ON ml.id_movimiento = m.id
+            INNER JOIN Usuario u ON m.id_usuario = u.id
+            INNER JOIN TipoAccion ta ON m.id_tipo_accion = ta.id
+            LEFT JOIN Almacen a_origen ON ml.id_almacen_origen = a_origen.id
+            LEFT JOIN Almacen a_destino ON ml.id_almacen_destino = a_destino.id
+        WHERE
+            ml.id_lote = @id_lote
+        ORDER BY
+            m.fecha, ml.id;
+
+        -- Ubicación actual de TODAS las unidades del lote (incluso stock cero)
+        SELECT
+            a.id AS id_almacen,
+            a.nombre AS almacen,
+            COALESCE(ca.stock, 0) AS stock_actual,
+            COALESCE(ca.stock, 0) * l.precio_unit AS valor_total,
+            CASE
+                WHEN ca.id IS NULL THEN 'Sin stock'
+                WHEN ca.stock = 0 THEN 'Sin stock'
+                ELSE 'Con stock'
+            END AS estado_stock
+        FROM
+            Almacen a
+            CROSS JOIN Lote l
+            LEFT JOIN ContenidoAlmacen ca ON a.id = ca.id_almacen AND l.id = ca.id_lote
+        WHERE
+            l.id = @id_lote
+        ORDER BY
+            stock_actual DESC, a.nombre;
+
+        -- Balance de movimientos (para verificación) - Mejorado con una sola CTE más eficiente
+        WITH Movimientos AS (
+            SELECT
+                ml.cantidad_delta AS cantidad,
+                CASE
+                    WHEN m.id_tipo_accion = 1 THEN 'Entrada'
+                    WHEN m.id_tipo_accion = 2 AND ml.id_almacen_origen IS NOT NULL AND ml.id_almacen_destino IS NOT NULL THEN 'Traslado'
+                    WHEN m.id_tipo_accion = 2 AND ml.id_almacen_destino IS NULL THEN 'Salida'
+                    WHEN m.id_tipo_accion = 3 THEN 'Ajuste'
+                    ELSE 'Otro'
+                END AS tipo
+            FROM
+                MovimientoLinea ml
+                INNER JOIN Movimiento m ON ml.id_movimiento = m.id
+            WHERE
+                ml.id_lote = @id_lote
+        ),
+        Resumen AS (
+            SELECT
+                SUM(CASE WHEN tipo = 'Entrada' THEN cantidad ELSE 0 END) AS total_entradas,
+                SUM(CASE WHEN tipo = 'Salida' THEN ABS(cantidad) ELSE 0 END) AS total_salidas,
+                SUM(CASE WHEN tipo = 'Ajuste' THEN cantidad ELSE 0 END) AS total_ajustes
+            FROM
+                Movimientos
+        ),
+        StockActual AS (
+            SELECT COALESCE(SUM(stock), 0) AS stock_total
+            FROM ContenidoAlmacen
+            WHERE id_lote = @id_lote
+        )
+        SELECT
+            r.total_entradas,
+            r.total_salidas,
+            r.total_ajustes,
+            sa.stock_total AS stock_actual,
+            (r.total_entradas - r.total_salidas + r.total_ajustes) AS balance_calculado,
+            CASE
+                WHEN (r.total_entradas - r.total_salidas + r.total_ajustes) = sa.stock_total
+                THEN 'Correcto'
+                ELSE 'Discrepancia'
+            END AS estado_balance
+        FROM
+            Resumen r
+            CROSS JOIN StockActual sa;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+EXEC PA_ObtenerHistorialMovimientosLote @id_lote = 1;
+
+
 
 -- Ver todas las acciones del usuario 1
 EXEC PA_ObtenerLineaTiempoUsuario @id_usuario = 1;
