@@ -40,7 +40,11 @@
           <tr class="hover:bg-gray-50">
             <td class="px-5 py-5 border-b bg-white text-sm">{{ venta.id }}</td>
             <td class="px-5 py-5 border-b bg-white text-sm">
-              {{ venta.fecha | date:'dd/MM/yyyy HH:mm' }}
+              @if (venta.fecha) {
+                {{ venta.fecha | date:'dd/MM/yyyy HH:mm' }}
+              } @else {
+                N/A
+              }
             </td>
 
             <td class="px-5 py-5 border-b bg-white text-sm">
@@ -56,13 +60,13 @@
             </td>
 
             <td class="px-5 py-5 border-b bg-white text-sm">
-              {{ obtenerNombreCliente(venta.idCliente) }}
+              {{ obtenerNombreCliente(venta) }}
             </td>
             <td class="px-5 py-5 border-b bg-white text-sm">
-              Usuario #{{ venta.idUsuario }}
+              {{ obtenerNombreUsuario(venta) }}
             </td>
             <td class="px-5 py-5 border-b bg-white text-sm">
-              Mov. #{{ venta.idMovimiento }}
+              {{ obtenerIdMovimiento(venta) }}
             </td>
             <td class="px-5 py-5 border-b bg-white text-sm font-semibold text-indigo-600">
               -

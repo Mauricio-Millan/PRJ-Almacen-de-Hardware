@@ -6,11 +6,13 @@ import { Venta } from '../../core/models/venta';
 import { Cliente } from '../../core/models/cliente';
 import { Almacen } from '../../core/models/almacen';
 import { ProductoDetalle } from '../../core/models/almacendetalle';
+import { Usuario } from '../../core/models/usuario';
 import { VentasService } from '../../core/services/ventas';
 import { ClientesService } from '../../core/services/cliente';
 import { Almacenes } from '../../core/services/almacenes';
 import { AlmacendetalleService } from '../../core/services/almacendetalleservice';
 import { MovimientosService } from '../../core/services/movimientos';
+import { UsuariosService } from '../../core/services/usuario';
 import { AuthService } from '../../core/services/auth.service';
 import { MovimientoGenerarRequest, LineaMovimientoRequest } from '../../core/models/movimiento-generar-request';
 
@@ -35,6 +37,7 @@ export class VentasComponent implements OnInit {
   ventas = signal<Venta[]>([]);
   clientes = signal<Cliente[]>([]);
   almacenes = signal<Almacen[]>([]);
+  usuarios = signal<Usuario[]>([]);
   productosDisponibles = signal<ProductoDetalle[]>([]);
   
   // Modal principal de nueva venta
@@ -81,6 +84,7 @@ export class VentasComponent implements OnInit {
     private almacenesService: Almacenes,
     private almacenDetalleService: AlmacendetalleService,
     private movimientosService: MovimientosService,
+    private usuariosService: UsuariosService,
     private authService: AuthService
   ) {}
 
@@ -93,12 +97,14 @@ export class VentasComponent implements OnInit {
     forkJoin({
       ventas: this.ventasService.getVentas(),
       clientes: this.clientesService.getClientes(),
-      almacenes: this.almacenesService.getAlmacenes()
+      almacenes: this.almacenesService.getAlmacenes(),
+      usuarios: this.usuariosService.getUsuarios()
     }).subscribe({
       next: (data) => {
         this.ventas.set(data.ventas);
         this.clientes.set(data.clientes);
         this.almacenes.set(data.almacenes);
+        this.usuarios.set(data.usuarios);
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -223,10 +229,33 @@ export class VentasComponent implements OnInit {
     }));
   }
 
+  // Helper para obtener el ID de campos que pueden ser número u objeto
+  obtenerIdUsuario(venta: Venta): number | undefined {
+    return typeof venta.idUsuario === 'number' ? venta.idUsuario : venta.idUsuario?.id;
+  }
+  
+  obtenerIdCliente(venta: Venta): number | undefined {
+    return typeof venta.idCliente === 'number' ? venta.idCliente : venta.idCliente?.id;
+  }
+  
+  obtenerIdMovimiento(venta: Venta): number | undefined {
+    return typeof venta.idMovimiento === 'number' ? venta.idMovimiento : venta.idMovimiento?.id;
+  }
+
   // Método auxiliar para obtener nombre del cliente
-  obtenerNombreCliente(idCliente: number): string {
+  obtenerNombreCliente(venta: Venta): string {
+    const idCliente = this.obtenerIdCliente(venta);
+    if (!idCliente) return 'N/A';
     const cliente = this.clientes().find(c => c.id === idCliente);
-    return cliente ? cliente.nombre : `Cliente #${idCliente}`;
+    return cliente ? cliente.nombre : `ID: ${idCliente}`;
+  }
+
+  // Método auxiliar para obtener nombre del usuario
+  obtenerNombreUsuario(venta: Venta): string {
+    const idUsuario = this.obtenerIdUsuario(venta);
+    if (!idUsuario) return 'N/A';
+    const usuario = this.usuarios().find(u => u.id === idUsuario);
+    return usuario ? usuario.nombre : `ID: ${idUsuario}`;
   }
 
   agregarItemAVenta() {
@@ -317,12 +346,13 @@ export class VentasComponent implements OnInit {
   realizarVenta() {
     this.isSaving.set(true);
     
+    // Obtener fecha actual en formato ISO
     const fechaActual = new Date().toISOString();
     
     // Construir las líneas del movimiento
     const lineas: LineaMovimientoRequest[] = this.itemsVenta().map(item => ({
       idLoteExistente: item.idLote,
-      cantidadDelta: -item.cantidad, // Negativo para venta
+      cantidadDelta: item.cantidad, // no es Negativo para venta
       precioVenta: item.precioVenta,
       idAlmacenOrigen: this.idAlmacenOrigen()!,
       idAlmacenDestino: null // null para VENTA

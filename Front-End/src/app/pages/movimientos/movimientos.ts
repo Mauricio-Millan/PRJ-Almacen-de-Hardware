@@ -293,9 +293,12 @@ export class Movimientos implements OnInit {
   realizarTransferencia() {
     this.isSaving.set(true);
 
+    // Obtener fecha actual en formato ISO
+    const fechaActual = new Date().toISOString();
+
     // Construir el request para el endpoint unificado
     const request: MovimientoGenerarRequest = {
-      fecha: new Date().toISOString(),
+      fecha: fechaActual,
       referencia: this.referencia(),
       comentario: this.comentario() || '',
       idUsuario: this.authService.getCurrentUserId()!,

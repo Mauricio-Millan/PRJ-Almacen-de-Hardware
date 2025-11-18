@@ -28,8 +28,8 @@
           <th class="px-5 py-3 border-b-2 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">ID</th>
           <th class="px-5 py-3 border-b-2 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Fecha</th>
           <th class="px-5 py-3 border-b-2 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Estado</th>
-          <th class="px-5 py-3 border-b-2 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Usuario ID</th>
-          <th class="px-5 py-3 border-b-2 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Proveedor ID</th>
+          <th class="px-5 py-3 border-b-2 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Usuario</th>
+          <th class="px-5 py-3 border-b-2 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Proveedor</th>
           <th class="px-5 py-3 border-b-2 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Movimiento ID</th>
           <th class="px-5 py-3 border-b-2 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">Acciones</th>
         </tr>
@@ -41,7 +41,7 @@
             <td class="px-5 py-5 border-b bg-white text-sm">{{ compra.id }}</td>
             <td class="px-5 py-5 border-b bg-white text-sm">
               @if (compra.fecha) {
-                {{ compra.fecha | date:'short' }}
+                {{ compra.fecha | date:'dd/MM/yyyy HH:mm' }}
               } @else {
                 N/A
               }
@@ -59,8 +59,8 @@
               </span>
             </td>
 
-            <td class="px-5 py-5 border-b bg-white text-sm">{{ obtenerIdUsuario(compra) }}</td>
-            <td class="px-5 py-5 border-b bg-white text-sm">{{ obtenerIdProveedor(compra) }}</td>
+            <td class="px-5 py-5 border-b bg-white text-sm">{{ obtenerNombreUsuario(compra) }}</td>
+            <td class="px-5 py-5 border-b bg-white text-sm">{{ obtenerNombreProveedor(compra) }}</td>
             <td class="px-5 py-5 border-b bg-white text-sm">{{ obtenerIdMovimiento(compra) }}</td>
 
             <td class="px-5 py-5 border-b bg-white text-sm">

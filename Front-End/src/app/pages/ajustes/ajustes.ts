@@ -292,15 +292,18 @@ export class Ajustes implements OnInit {
   realizarAjuste() {
     this.isSaving.set(true);
 
+    // Obtener fecha actual en formato ISO
+    const fechaActual = new Date().toISOString();
+
     // Construir el request para el endpoint unificado
     const request: MovimientoGenerarRequest = {
-      fecha: new Date().toISOString(),
+      fecha: fechaActual,
       referencia: this.referencia(),
       comentario: this.comentario() || '',
       idUsuario: this.authService.getCurrentUserId()!,
       idTipoAccion: 3, // AJUSTE
       lineas: this.itemsAjuste().map(item => ({
-        cantidadDelta: item.tipo === 'incremento' ? item.cantidadAjuste : -item.cantidadAjuste,
+        cantidadDelta: item.tipo === 'decremento' ? -item.cantidadAjuste : item.cantidadAjuste,
         idLoteExistente: item.idLote,
         idAlmacenOrigen: this.idAlmacenOrigen()!,
         idAlmacenDestino: null

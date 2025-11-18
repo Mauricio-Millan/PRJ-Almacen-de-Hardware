@@ -6,11 +6,13 @@ import { Compra } from '../../core/models/compra';
 import { Producto } from '../../core/models/producto';
 import { Proveedor } from '../../core/models/proveedor';
 import { Almacen } from '../../core/models/almacen';
+import { Usuario } from '../../core/models/usuario';
 import { ComprasService } from '../../core/services/compras';
 import { ProductosService } from '../../core/services/producto';
 import { Proveedores } from '../../core/services/proveedores';
 import { Almacenes } from '../../core/services/almacenes';
 import { MovimientosService } from '../../core/services/movimientos';
+import { UsuariosService } from '../../core/services/usuario';
 import { MovimientoGenerarRequest, LineaMovimientoRequest } from '../../core/models/movimiento-generar-request';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -35,6 +37,7 @@ export class ComprasComponent implements OnInit {
   productos = signal<Producto[]>([]);
   proveedores = signal<Proveedor[]>([]);
   almacenes = signal<Almacen[]>([]);
+  usuarios = signal<Usuario[]>([]);
   
   // Modal principal de nueva compra
   modalVisible = signal(false);
@@ -81,6 +84,7 @@ export class ComprasComponent implements OnInit {
     private proveedoresService: Proveedores,
     private almacenesService: Almacenes,
     private movimientosService: MovimientosService,
+    private usuariosService: UsuariosService,
     private authService: AuthService
   ) {}
 
@@ -94,13 +98,15 @@ export class ComprasComponent implements OnInit {
       compras: this.comprasService.getCompras(),
       productos: this.productosService.getProductosActivos(),
       proveedores: this.proveedoresService.getProveedores(),
-      almacenes: this.almacenesService.getAlmacenes()
+      almacenes: this.almacenesService.getAlmacenes(),
+      usuarios: this.usuariosService.getUsuarios()
     }).subscribe({
       next: (data) => {
         this.compras.set(data.compras);
         this.productos.set(data.productos);
         this.proveedores.set(data.proveedores);
         this.almacenes.set(data.almacenes);
+        this.usuarios.set(data.usuarios);
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -122,6 +128,22 @@ export class ComprasComponent implements OnInit {
   
   obtenerIdMovimiento(compra: Compra): number | undefined {
     return typeof compra.idMovimiento === 'number' ? compra.idMovimiento : compra.idMovimiento?.id;
+  }
+
+  // Helper para obtener el nombre del usuario
+  obtenerNombreUsuario(compra: Compra): string {
+    const idUsuario = this.obtenerIdUsuario(compra);
+    if (!idUsuario) return 'N/A';
+    const usuario = this.usuarios().find(u => u.id === idUsuario);
+    return usuario ? usuario.nombre : `ID: ${idUsuario}`;
+  }
+
+  // Helper para obtener el nombre del proveedor
+  obtenerNombreProveedor(compra: Compra): string {
+    const idProveedor = this.obtenerIdProveedor(compra);
+    if (!idProveedor) return 'N/A';
+    const proveedor = this.proveedores().find(p => p.id === idProveedor);
+    return proveedor ? proveedor.nombre : `ID: ${idProveedor}`;
   }
 
   abrirModalNuevo() {
@@ -287,7 +309,7 @@ export class ComprasComponent implements OnInit {
   realizarCompra() {
     this.isSaving.set(true);
     
-    // Obtener la fecha actual en formato ISO
+    // Obtener fecha actual en formato ISO
     const fechaActual = new Date().toISOString();
     
     // Construir las líneas del movimiento desde los items de la compra
