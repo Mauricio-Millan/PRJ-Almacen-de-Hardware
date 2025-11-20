@@ -77,14 +77,25 @@ export class ClientesComponent implements OnInit {
     };
   }
 
+  private duplicateNombreValidator(currentId: number | null = null): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const nombreValue = control.value?.trim().toLowerCase();
+      if (!nombreValue) return null;
+      const duplicate = this.clientes.some(
+        (c) => c.nombre.trim().toLowerCase() === nombreValue && c.id !== currentId
+      );
+      return duplicate ? { duplicateName: true } : null;
+    };
+  }
+
   private initForm(): void {
     this.clienteForm = this.fb.group({
-      nombre: ['', [Validators.required, Validators.minLength(3)]],
+      nombre: ['', [Validators.required, Validators.minLength(3), this.duplicateNombreValidator()]],
       ruc: [
         '',
-        [Validators.required, Validators.pattern(/^\d{11}$/), this.duplicateRucValidator()],
+        [Validators.required, Validators.pattern(/^\d{11}$/), Validators.maxLength(11), this.duplicateRucValidator()],
       ],
-      telefono: ['', [Validators.required, Validators.minLength(6)]],
+      telefono: ['', [Validators.required, Validators.pattern(/^\d*$/), Validators.maxLength(9)]],
       estado: [true],
     });
   }
@@ -148,10 +159,19 @@ export class ClientesComponent implements OnInit {
       this.selectedCliente = { ...cliente };
       this.clienteForm.patchValue(cliente);
       this.clienteForm
+        .get('nombre')
+        ?.setValidators([
+          Validators.required,
+          Validators.minLength(3),
+          this.duplicateNombreValidator(cliente.id),
+        ]);
+      this.clienteForm.get('nombre')?.updateValueAndValidity();
+      this.clienteForm
         .get('ruc')
         ?.setValidators([
           Validators.required,
           Validators.pattern(/^\d{11}$/),
+          Validators.maxLength(11),
           this.duplicateRucValidator(cliente.id),
         ]);
       this.clienteForm.get('ruc')?.updateValueAndValidity();
@@ -160,10 +180,19 @@ export class ClientesComponent implements OnInit {
       this.selectedCliente = null;
       this.clienteForm.reset({ estado: true });
       this.clienteForm
+        .get('nombre')
+        ?.setValidators([
+          Validators.required,
+          Validators.minLength(3),
+          this.duplicateNombreValidator(),
+        ]);
+      this.clienteForm.get('nombre')?.updateValueAndValidity();
+      this.clienteForm
         .get('ruc')
         ?.setValidators([
           Validators.required,
           Validators.pattern(/^\d{11}$/),
+          Validators.maxLength(11),
           this.duplicateRucValidator(),
         ]);
       this.clienteForm.get('ruc')?.updateValueAndValidity();
@@ -178,7 +207,11 @@ export class ClientesComponent implements OnInit {
   }
 
   saveCliente(): void {
-    if (this.clienteForm.invalid || this.clienteForm.get('ruc')?.hasError('duplicate')) {
+    if (
+      this.clienteForm.invalid ||
+      this.clienteForm.get('ruc')?.hasError('duplicate') ||
+      this.clienteForm.get('nombre')?.hasError('duplicateName')
+    ) {
       this.clienteForm.markAllAsTouched();
       return;
     }

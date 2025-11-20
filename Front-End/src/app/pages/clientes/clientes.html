@@ -146,10 +146,20 @@
           placeholder="Ingrese nombre"
         />
         <p
-          *ngIf="clienteForm.get('nombre')?.invalid && clienteForm.get('nombre')?.touched"
+          *ngIf="
+            (clienteForm.get('nombre')?.hasError('required') ||
+              clienteForm.get('nombre')?.hasError('minlength')) &&
+            clienteForm.get('nombre')?.touched
+          "
           class="text-red-500 text-sm mt-1"
         >
           El nombre es obligatorio y debe tener al menos 3 caracteres.
+        </p>
+        <p
+          *ngIf="clienteForm.get('nombre')?.hasError('duplicateName')"
+          class="text-red-500 text-sm mt-1"
+        >
+          Este nombre ya está registrado.
         </p>
       </div>
 
@@ -159,6 +169,7 @@
         <input
           formControlName="ruc"
           type="text"
+          maxlength="11"
           class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"
           placeholder="Ingrese RUC (11 dígitos)"
         />
@@ -185,14 +196,15 @@
         <input
           formControlName="telefono"
           type="text"
+          maxlength="9"
           class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"
-          placeholder="Ingrese teléfono"
+          placeholder="Ingrese teléfono (máximo 9 dígitos)"
         />
         <p
           *ngIf="clienteForm.get('telefono')?.invalid && clienteForm.get('telefono')?.touched"
           class="text-red-500 text-sm mt-1"
         >
-          El teléfono es obligatorio y debe tener al menos 6 caracteres.
+          El teléfono es obligatorio y debe contener solo dígitos (máximo 9).
         </p>
       </div>
 

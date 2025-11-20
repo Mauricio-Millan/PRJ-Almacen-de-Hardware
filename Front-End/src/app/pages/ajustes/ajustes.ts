@@ -3,9 +3,11 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { Movimiento } from '../../core/models/movimiento';
+import { MovimientoLinea } from '../../core/models/movimiento-linea';
 import { Almacen } from '../../core/models/almacen';
 import { ProductoDetalle } from '../../core/models/almacendetalle';
 import { MovimientosService } from '../../core/services/movimientos';
+import { MovimientoLineasService } from '../../core/services/movimiento-lineas';
 import { Almacenes } from '../../core/services/almacenes';
 import { AlmacendetalleService } from '../../core/services/almacendetalleservice';
 import { AuthService } from '../../core/services/auth.service';
@@ -71,8 +73,18 @@ export class Ajustes implements OnInit {
   isSaving = signal(false);
   isLoadingLotes = signal(false);
 
+  // Modal detalle de ajuste
+  modalDetalle = signal(false);
+  detalleLineas = signal<MovimientoLinea[]>([]);
+  isLoadingDetalle = signal(false);
+  ajusteSeleccionado = signal<Movimiento | null>(null);
+
+  // Para usar Math en el template
+  Math = Math;
+
   constructor(
     private movimientosService: MovimientosService,
+    private movimientoLineasService: MovimientoLineasService,
     private almacenesService: Almacenes,
     private almacenDetalleService: AlmacendetalleService,
     private authService: AuthService
@@ -325,5 +337,48 @@ export class Ajustes implements OnInit {
         alert(`Error: ${mensaje}`);
       }
     });
+  }
+
+  // --- VER DETALLE DE AJUSTE ---
+
+  obtenerIdMovimiento(movimiento: Movimiento): number | undefined {
+    return movimiento.id;
+  }
+  
+  abrirModalDetalle(movimiento: Movimiento) {
+    const idMovimiento = this.obtenerIdMovimiento(movimiento);
+    if (!idMovimiento) {
+      alert('No se puede obtener el ID del movimiento');
+      return;
+    }
+
+    this.ajusteSeleccionado.set(movimiento);
+    this.modalDetalle.set(true);
+    this.isLoadingDetalle.set(true);
+
+    this.movimientoLineasService.getMovimientoLineasByMovimiento(idMovimiento).subscribe({
+      next: (lineas) => {
+        this.detalleLineas.set(lineas);
+        this.isLoadingDetalle.set(false);
+      },
+      error: (error) => {
+        console.error('Error al cargar detalle:', error);
+        this.isLoadingDetalle.set(false);
+        alert('Error al cargar el detalle del ajuste');
+      }
+    });
+  }
+
+  cerrarModalDetalle() {
+    this.modalDetalle.set(false);
+    this.detalleLineas.set([]);
+    this.ajusteSeleccionado.set(null);
+  }
+
+  obtenerNombreAlmacenDetalle(linea: MovimientoLinea): string {
+    const idAlmacen = linea.idAlmacenOrigen?.id;
+    if (!idAlmacen) return 'N/A';
+    const almacen = this.almacenes().find(a => a.id === idAlmacen);
+    return almacen ? almacen.nombre : `Almacén #${idAlmacen}`;
   }
 }

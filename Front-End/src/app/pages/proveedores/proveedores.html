@@ -153,10 +153,20 @@
           placeholder="Ingrese nombre"
         />
         <p
-          *ngIf="proveedorForm.get('nombre')?.invalid && proveedorForm.get('nombre')?.touched"
+          *ngIf="
+            (proveedorForm.get('nombre')?.hasError('required') ||
+              proveedorForm.get('nombre')?.hasError('minlength')) &&
+            proveedorForm.get('nombre')?.touched
+          "
           class="text-red-500 text-sm mt-1"
         >
           El nombre es obligatorio y debe tener al menos 3 caracteres.
+        </p>
+        <p
+          *ngIf="proveedorForm.get('nombre')?.hasError('duplicateName')"
+          class="text-red-500 text-sm mt-1"
+        >
+          Este nombre ya está registrado.
         </p>
       </div>
       <!-- RUC -->
@@ -165,6 +175,7 @@
         <input
           formControlName="ruc"
           type="text"
+          maxlength="11"
           class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"
           placeholder="Ingrese RUC (11 dígitos)"
         />
@@ -195,6 +206,7 @@
         <input
           formControlName="telefono"
           type="text"
+          maxlength="9"
           class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"
           placeholder="Ingrese teléfono"
         />

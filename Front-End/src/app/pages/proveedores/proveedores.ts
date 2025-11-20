@@ -55,9 +55,20 @@ export class ProveedoresComponent implements OnInit {
     };
   }
 
+  private duplicateNombreValidator(currentId: number | null = null): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const nombreValue = control.value?.trim().toLowerCase();
+      if (!nombreValue) return null;
+      const duplicate = this.proveedores.some(
+        (p) => p.nombre.trim().toLowerCase() === nombreValue && p.id !== currentId
+      );
+      return duplicate ? { duplicateName: true } : null;
+    };
+  }
+
   private initForm(): void {
     this.proveedorForm = this.fb.group({
-      nombre: ['', [Validators.required, Validators.minLength(3)]],
+      nombre: ['', [Validators.required, Validators.minLength(3), this.duplicateNombreValidator()]],
       ruc: [
         '',
         [Validators.required, Validators.pattern(/^\d{11}$/), this.duplicateRucValidator()],
@@ -118,7 +129,15 @@ export class ProveedoresComponent implements OnInit {
       this.isEditMode = true;
       this.selectedProveedor = { ...proveedor };
       this.proveedorForm.patchValue(proveedor);
-      // actualizar validator para ignorar el propio RUC
+      // actualizar validators para ignorar el propio RUC y nombre
+      this.proveedorForm
+        .get('nombre')
+        ?.setValidators([
+          Validators.required,
+          Validators.minLength(3),
+          this.duplicateNombreValidator(proveedor.id),
+        ]);
+      this.proveedorForm.get('nombre')?.updateValueAndValidity();
       this.proveedorForm
         .get('ruc')
         ?.setValidators([
@@ -131,6 +150,14 @@ export class ProveedoresComponent implements OnInit {
       this.isEditMode = false;
       this.selectedProveedor = null;
       this.proveedorForm.reset({ estado: true });
+      this.proveedorForm
+        .get('nombre')
+        ?.setValidators([
+          Validators.required,
+          Validators.minLength(3),
+          this.duplicateNombreValidator(),
+        ]);
+      this.proveedorForm.get('nombre')?.updateValueAndValidity();
       this.proveedorForm
         .get('ruc')
         ?.setValidators([
@@ -150,7 +177,11 @@ export class ProveedoresComponent implements OnInit {
   }
 
   saveProveedor(): void {
-    if (this.proveedorForm.invalid || this.proveedorForm.get('ruc')?.hasError('duplicate')) {
+    if (
+      this.proveedorForm.invalid ||
+      this.proveedorForm.get('ruc')?.hasError('duplicate') ||
+      this.proveedorForm.get('nombre')?.hasError('duplicateName')
+    ) {
       this.proveedorForm.markAllAsTouched();
       return;
     }
