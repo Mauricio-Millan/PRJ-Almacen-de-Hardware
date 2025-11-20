@@ -353,23 +353,40 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   processVentas(ventas: any[]): void {
-    // Filtrar ventas por rango de fechas
-    const ventasFiltradas = this.filtrarPorFechas(ventas);
+    // Obtener mes y año actual
+    const hoy = new Date();
+    const mesActual = hoy.getMonth();
+    const añoActual = hoy.getFullYear();
     
-    this.totalVentas = ventasFiltradas.length;
-    const hoy = new Date().toISOString().split('T')[0];
-    this.ventasHoy = ventasFiltradas.filter(v => v.fecha?.startsWith(hoy)).length;
+    // Filtrar ventas del mes actual
+    const ventasMesActual = ventas.filter(v => {
+      if (!v.fecha) return false;
+      const fechaVenta = new Date(v.fecha);
+      return fechaVenta.getMonth() === mesActual && fechaVenta.getFullYear() === añoActual;
+    });
     
-    const ventasAyer = ventasFiltradas.filter(v => {
-      const ayer = new Date();
-      ayer.setDate(ayer.getDate() - 1);
-      return v.fecha?.startsWith(ayer.toISOString().split('T')[0]);
-    }).length;
+    // Filtrar ventas del mes anterior
+    const mesAnterior = mesActual === 0 ? 11 : mesActual - 1;
+    const añoMesAnterior = mesActual === 0 ? añoActual - 1 : añoActual;
+    const ventasMesAnterior = ventas.filter(v => {
+      if (!v.fecha) return false;
+      const fechaVenta = new Date(v.fecha);
+      return fechaVenta.getMonth() === mesAnterior && fechaVenta.getFullYear() === añoMesAnterior;
+    });
     
-    if (ventasAyer > 0) {
-      const cambioNumber = parseFloat((((this.ventasHoy - ventasAyer) / ventasAyer) * 100).toFixed(1));
-      const cambioStr = cambioNumber.toFixed(1);
-      this.ventasChange = `${cambioNumber > 0 ? '+' : ''}${cambioStr}%`;
+    // Total de ventas del mes actual
+    this.totalVentas = ventasMesActual.length;
+    this.ventasHoy = ventasMesActual.length;
+    
+    // Calcular cambio porcentual comparando meses
+    const totalMesAnterior = ventasMesAnterior.length;
+    if (totalMesAnterior > 0) {
+      const cambioNumber = parseFloat((((this.totalVentas - totalMesAnterior) / totalMesAnterior) * 100).toFixed(1));
+      this.ventasChange = `${cambioNumber > 0 ? '+' : ''}${cambioNumber}%`;
+    } else if (this.totalVentas > 0) {
+      this.ventasChange = '+100%';
+    } else {
+      this.ventasChange = '0%';
     }
     
     // Agrupar ventas por día de la semana (usando datos de la semana seleccionada)
@@ -383,9 +400,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
     this.barChartData.datasets[0].data = ventasPorDia;
 
-    // Agrupar ventas por mes
+    // Agrupar ventas por mes (usando TODAS las ventas sin filtro de rango)
     const ventasPorMes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    ventasFiltradas.forEach(v => {
+    ventas.forEach(v => {
       if (v.fecha) {
         const mes = new Date(v.fecha).getMonth();
         ventasPorMes[mes]++;
@@ -395,13 +412,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   processProductos(productos: any[]): void {
+    // Total de todos los productos
     this.totalProductos = productos.length;
+    
+    // Productos activos
     this.productosActivos = productos.filter(p => p.estado === true).length;
     
-    const porcentajeActivos = this.totalProductos > 0 
-      ? ((this.productosActivos / this.totalProductos) * 100).toFixed(1) 
-      : '0';
-    this.productosChange = `${porcentajeActivos}% activos`;
+    // Mostrar cantidad de productos activos en la tarjeta
+    this.productosChange = `${this.productosActivos} activos`;
 
     // Top productos (simulando popularidad basada en estado)
     this.bestProducts = productos
@@ -415,41 +433,61 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   processClientes(clientes: any[]): void {
+    // Total de todos los clientes
     this.totalClientes = clientes.length;
     
-    const hace30Dias = new Date();
-    hace30Dias.setDate(hace30Dias.getDate() - 30);
+    // Clientes nuevos del mes actual
+    const hoy = new Date();
+    const mesActual = hoy.getMonth();
+    const añoActual = hoy.getFullYear();
     
     this.clientesNuevos = clientes.filter(c => {
       if (c.fechaRegistro) {
-        return new Date(c.fechaRegistro) >= hace30Dias;
+        const fechaRegistro = new Date(c.fechaRegistro);
+        return fechaRegistro.getMonth() === mesActual && fechaRegistro.getFullYear() === añoActual;
       }
       return false;
     }).length;
     
-    if (this.totalClientes > 0) {
-      const porcentaje = ((this.clientesNuevos / this.totalClientes) * 100).toFixed(1);
-      this.clientesChange = `${porcentaje}% nuevos`;
-    }
+    // Mostrar clientes nuevos del mes
+    this.clientesChange = `${this.clientesNuevos} nuevos este mes`;
   }
 
   processCompras(compras: any[]): void {
-    // Filtrar compras por rango de fechas
-    const comprasFiltradas = this.filtrarPorFechas(compras);
+    // Obtener mes y año actual
+    const hoy = new Date();
+    const mesActual = hoy.getMonth();
+    const añoActual = hoy.getFullYear();
     
-    this.totalCompras = comprasFiltradas.length;
-    const hoy = new Date().toISOString().split('T')[0];
-    this.comprasHoy = comprasFiltradas.filter(c => c.fecha?.startsWith(hoy)).length;
+    // Filtrar compras del mes actual
+    const comprasMesActual = compras.filter(c => {
+      if (!c.fecha) return false;
+      const fechaCompra = new Date(c.fecha);
+      return fechaCompra.getMonth() === mesActual && fechaCompra.getFullYear() === añoActual;
+    });
     
-    const comprasAyer = comprasFiltradas.filter(c => {
-      const ayer = new Date();
-      ayer.setDate(ayer.getDate() - 1);
-      return c.fecha?.startsWith(ayer.toISOString().split('T')[0]);
-    }).length;
+    // Filtrar compras del mes anterior
+    const mesAnterior = mesActual === 0 ? 11 : mesActual - 1;
+    const añoMesAnterior = mesActual === 0 ? añoActual - 1 : añoActual;
+    const comprasMesAnterior = compras.filter(c => {
+      if (!c.fecha) return false;
+      const fechaCompra = new Date(c.fecha);
+      return fechaCompra.getMonth() === mesAnterior && fechaCompra.getFullYear() === añoMesAnterior;
+    });
     
-    if (comprasAyer > 0) {
-      const cambioNumber = parseFloat(((this.comprasHoy - comprasAyer) / comprasAyer * 100).toFixed(1));
-      this.comprasChange = `${cambioNumber > 0 ? '+' : ''}${cambioNumber.toFixed(1)}%`;
+    // Total de compras del mes actual
+    this.totalCompras = comprasMesActual.length;
+    this.comprasHoy = comprasMesActual.length;
+    
+    // Calcular cambio porcentual comparando meses
+    const totalMesAnterior = comprasMesAnterior.length;
+    if (totalMesAnterior > 0) {
+      const cambioNumber = parseFloat(((this.totalCompras - totalMesAnterior) / totalMesAnterior * 100).toFixed(1));
+      this.comprasChange = `${cambioNumber > 0 ? '+' : ''}${cambioNumber}%`;
+    } else if (this.totalCompras > 0) {
+      this.comprasChange = '+100%';
+    } else {
+      this.comprasChange = '0%';
     }
 
     // Agrupar compras por día de la semana (usando datos de la semana seleccionada)
@@ -463,9 +501,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
     this.barChartData.datasets[1].data = comprasPorDia;
 
-    // Agrupar compras por mes
+    // Agrupar compras por mes (usando TODAS las compras sin filtro de rango)
     const comprasPorMes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    comprasFiltradas.forEach(c => {
+    compras.forEach(c => {
       if (c.fecha) {
         const mes = new Date(c.fecha).getMonth();
         comprasPorMes[mes]++;

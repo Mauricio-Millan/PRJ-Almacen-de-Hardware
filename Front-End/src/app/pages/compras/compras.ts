@@ -440,4 +440,90 @@ export class ComprasComponent implements OnInit {
       return sum + (cantidad * precio);
     }, 0);
   }
+
+  async exportarDetallePDF(): Promise<void> {
+    if (!this.compraSeleccionada()) return;
+
+    try {
+      const jspdfModule = await import('jspdf');
+      const { jsPDF } = jspdfModule as any;
+      const pdf = new jsPDF();
+      
+      const compra = this.compraSeleccionada()!;
+      const lineas = this.detalleLineas();
+      
+      // Título
+      pdf.setFontSize(18);
+      pdf.text('Detalle de Compra', 105, 15, { align: 'center' });
+      
+      // Información general
+      pdf.setFontSize(11);
+      let y = 30;
+      
+      pdf.text(`Fecha: ${compra.fecha ? new Date(compra.fecha).toLocaleString('es-PE') : 'N/A'}`, 20, y);
+      y += 7;
+      pdf.text(`Proveedor: ${this.obtenerNombreProveedor(compra)}`, 20, y);
+      y += 7;
+      pdf.text(`Usuario: ${this.obtenerNombreUsuario(compra)}`, 20, y);
+      y += 7;
+      pdf.text(`Estado: ${compra.estado ? 'Activa' : 'Inactiva'}`, 20, y);
+      y += 15;
+      
+      // Encabezados de tabla
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Producto', 20, y);
+      pdf.text('Marca', 70, y);
+      pdf.text('Lote', 110, y);
+      pdf.text('Cant.', 140, y, { align: 'right' });
+      pdf.text('P. Unit.', 165, y, { align: 'right' });
+      pdf.text('Subtotal', 190, y, { align: 'right' });
+      y += 2;
+      
+      // Línea separadora
+      pdf.line(20, y, 190, y);
+      y += 5;
+      
+      // Detalle de líneas
+      pdf.setFont(undefined, 'normal');
+      lineas.forEach(linea => {
+        if (y > 270) {
+          pdf.addPage();
+          y = 20;
+        }
+        
+        const producto = linea.idLote.idProducto.nombre || 'N/A';
+        const marca = linea.idLote.idProducto.idMarca.nombre || 'N/A';
+        const lote = linea.idLote.codigoLote || linea.idLote.id.toString();
+        const cantidad = Math.abs(linea.cantidadDelta).toString();
+        const precioUnit = `S/ ${(linea.idLote.precioUnit || 0).toFixed(2)}`;
+        const subtotal = `S/ ${(Math.abs(linea.cantidadDelta) * (linea.idLote.precioUnit || 0)).toFixed(2)}`;
+        
+        pdf.text(producto.substring(0, 25), 20, y);
+        pdf.text(marca.substring(0, 20), 70, y);
+        pdf.text(lote.substring(0, 15), 110, y);
+        pdf.text(cantidad, 140, y, { align: 'right' });
+        pdf.text(precioUnit, 165, y, { align: 'right' });
+        pdf.text(subtotal, 190, y, { align: 'right' });
+        y += 7;
+      });
+      
+      // Total
+      y += 3;
+      pdf.line(20, y, 190, y);
+      y += 7;
+      pdf.setFont(undefined, 'bold');
+      pdf.setFontSize(12);
+      pdf.text('TOTAL:', 140, y, { align: 'right' });
+      pdf.text(`S/ ${this.calcularTotalDetalle().toFixed(2)}`, 190, y, { align: 'right' });
+      
+      // Guardar PDF
+      const fecha = compra.fecha ? new Date(compra.fecha).toISOString().split('T')[0] : 'sin-fecha';
+      pdf.save(`compra-detalle-${compra.id}-${fecha}.pdf`);
+      
+    } catch (error) {
+      console.error('Error al exportar PDF:', error);
+      alert('Error al generar el PDF. Por favor, intente nuevamente.');
+    }
+  }
 }
