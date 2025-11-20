@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import { VentasService } from '../../core/services/ventas';
@@ -14,11 +15,21 @@ import { ChangeDetectorRef } from '@angular/core';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, BaseChartDirective],
+  imports: [CommonModule, BaseChartDirective, FormsModule],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  // Filtros de fecha
+  fechaDesde: string = '';
+  fechaHasta: string = '';
+
+  // Control de semanas para el gráfico semanal
+  semanaActual: number = 0; // 0 = semana actual, -1 = semana anterior, etc.
+  fechaInicioSemana: Date = new Date();
+  fechaFinSemana: Date = new Date();
+  infoSemana: string = '';
+
   // Métricas principales
   totalVentas: number = 0;
   totalCompras: number = 0;
@@ -138,6 +149,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private routerSub?: Subscription;
 
   ngOnInit(): void {
+    // Inicializar fechas: últimos 30 días por defecto
+    const hoy = new Date();
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hoy.getDate() - 30);
+    
+    this.fechaHasta = this.formatDateForInput(hoy);
+    this.fechaDesde = this.formatDateForInput(hace30Dias);
+
+    // Inicializar semana actual
+    this.calcularRangoSemana();
+
     // Asegurar que al navegar de vuelta los datos se refresquen si el componente fue reutilizado
     this.routerSub = this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((ev: any) => {
       // Si la URL contiene 'dashboard' forzamos recarga de métricas
@@ -151,6 +173,119 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.routerSub) this.routerSub.unsubscribe();
+  }
+
+  // Formatear fecha para input type="date" (YYYY-MM-DD)
+  private formatDateForInput(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Filtrar datos por rango de fechas
+  private filtrarPorFechas(items: any[]): any[] {
+    if (!this.fechaDesde && !this.fechaHasta) return items;
+    
+    const desde = this.fechaDesde ? new Date(this.fechaDesde) : null;
+    const hasta = this.fechaHasta ? new Date(this.fechaHasta) : null;
+    
+    // Ajustar hasta para incluir todo el día
+    if (hasta) {
+      hasta.setHours(23, 59, 59, 999);
+    }
+    
+    return items.filter(item => {
+      if (!item.fecha) return false;
+      const fechaItem = new Date(item.fecha);
+      
+      if (desde && fechaItem < desde) return false;
+      if (hasta && fechaItem > hasta) return false;
+      
+      return true;
+    });
+  }
+
+  // Método público para aplicar filtros desde el template
+  aplicarFiltros(): void {
+    this.loadDashboardData();
+  }
+
+  // Limpiar filtros y volver a valores por defecto
+  limpiarFiltros(): void {
+    const hoy = new Date();
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hoy.getDate() - 30);
+    
+    this.fechaHasta = this.formatDateForInput(hoy);
+    this.fechaDesde = this.formatDateForInput(hace30Dias);
+    
+    this.loadDashboardData();
+  }
+
+  // --- NAVEGACIÓN POR SEMANAS ---
+
+  private calcularRangoSemana(): void {
+    const hoy = new Date();
+    const diaSemana = hoy.getDay(); // 0 = Domingo, 1 = Lunes, ...
+    const diasDesdeInicio = diaSemana === 0 ? 6 : diaSemana - 1; // Lunes como inicio
+    
+    // Calcular inicio de la semana actual
+    const inicioSemanaBase = new Date(hoy);
+    inicioSemanaBase.setDate(hoy.getDate() - diasDesdeInicio);
+    
+    // Ajustar según semanaActual
+    this.fechaInicioSemana = new Date(inicioSemanaBase);
+    this.fechaInicioSemana.setDate(inicioSemanaBase.getDate() + (this.semanaActual * 7));
+    this.fechaInicioSemana.setHours(0, 0, 0, 0);
+    
+    // Calcular fin de semana (Domingo)
+    this.fechaFinSemana = new Date(this.fechaInicioSemana);
+    this.fechaFinSemana.setDate(this.fechaInicioSemana.getDate() + 6);
+    this.fechaFinSemana.setHours(23, 59, 59, 999);
+    
+    // Generar texto informativo
+    this.generarInfoSemana();
+  }
+
+  private generarInfoSemana(): void {
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    
+    const diaInicio = this.fechaInicioSemana.getDate();
+    const mesInicio = meses[this.fechaInicioSemana.getMonth()];
+    const diaFin = this.fechaFinSemana.getDate();
+    const mesFin = meses[this.fechaFinSemana.getMonth()];
+    const año = this.fechaFinSemana.getFullYear();
+    
+    if (this.semanaActual === 0) {
+      this.infoSemana = `Semana Actual: ${diaInicio} ${mesInicio} - ${diaFin} ${mesFin} ${año}`;
+    } else if (this.semanaActual === -1) {
+      this.infoSemana = `Semana Pasada: ${diaInicio} ${mesInicio} - ${diaFin} ${mesFin} ${año}`;
+    } else if (this.semanaActual < -1) {
+      this.infoSemana = `Hace ${Math.abs(this.semanaActual)} semanas: ${diaInicio} ${mesInicio} - ${diaFin} ${mesFin} ${año}`;
+    } else {
+      this.infoSemana = `Semana Futura: ${diaInicio} ${mesInicio} - ${diaFin} ${mesFin} ${año}`;
+    }
+  }
+
+  cambiarSemana(direccion: number): void {
+    this.semanaActual += direccion;
+    this.calcularRangoSemana();
+    this.loadDashboardData();
+  }
+
+  volverSemanaActual(): void {
+    this.semanaActual = 0;
+    this.calcularRangoSemana();
+    this.loadDashboardData();
+  }
+
+  private filtrarPorSemana(items: any[]): any[] {
+    return items.filter(item => {
+      if (!item.fecha) return false;
+      const fechaItem = new Date(item.fecha);
+      return fechaItem >= this.fechaInicioSemana && fechaItem <= this.fechaFinSemana;
+    });
   }
 
   private refreshCharts(): void {
@@ -218,11 +353,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   processVentas(ventas: any[]): void {
-    this.totalVentas = ventas.length;
-    const hoy = new Date().toISOString().split('T')[0];
-    this.ventasHoy = ventas.filter(v => v.fecha?.startsWith(hoy)).length;
+    // Filtrar ventas por rango de fechas
+    const ventasFiltradas = this.filtrarPorFechas(ventas);
     
-    const ventasAyer = ventas.filter(v => {
+    this.totalVentas = ventasFiltradas.length;
+    const hoy = new Date().toISOString().split('T')[0];
+    this.ventasHoy = ventasFiltradas.filter(v => v.fecha?.startsWith(hoy)).length;
+    
+    const ventasAyer = ventasFiltradas.filter(v => {
       const ayer = new Date();
       ayer.setDate(ayer.getDate() - 1);
       return v.fecha?.startsWith(ayer.toISOString().split('T')[0]);
@@ -234,9 +372,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.ventasChange = `${cambioNumber > 0 ? '+' : ''}${cambioStr}%`;
     }
     
-    // Agrupar ventas por día de la semana
+    // Agrupar ventas por día de la semana (usando datos de la semana seleccionada)
+    const ventasSemana = this.filtrarPorSemana(ventas);
     const ventasPorDia = [0, 0, 0, 0, 0, 0, 0];
-    ventas.forEach(v => {
+    ventasSemana.forEach(v => {
       if (v.fecha) {
         const dia = new Date(v.fecha).getDay();
         ventasPorDia[dia === 0 ? 6 : dia - 1]++;
@@ -246,7 +385,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     // Agrupar ventas por mes
     const ventasPorMes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    ventas.forEach(v => {
+    ventasFiltradas.forEach(v => {
       if (v.fecha) {
         const mes = new Date(v.fecha).getMonth();
         ventasPorMes[mes]++;
@@ -295,11 +434,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   processCompras(compras: any[]): void {
-    this.totalCompras = compras.length;
-    const hoy = new Date().toISOString().split('T')[0];
-    this.comprasHoy = compras.filter(c => c.fecha?.startsWith(hoy)).length;
+    // Filtrar compras por rango de fechas
+    const comprasFiltradas = this.filtrarPorFechas(compras);
     
-    const comprasAyer = compras.filter(c => {
+    this.totalCompras = comprasFiltradas.length;
+    const hoy = new Date().toISOString().split('T')[0];
+    this.comprasHoy = comprasFiltradas.filter(c => c.fecha?.startsWith(hoy)).length;
+    
+    const comprasAyer = comprasFiltradas.filter(c => {
       const ayer = new Date();
       ayer.setDate(ayer.getDate() - 1);
       return c.fecha?.startsWith(ayer.toISOString().split('T')[0]);
@@ -310,9 +452,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.comprasChange = `${cambioNumber > 0 ? '+' : ''}${cambioNumber.toFixed(1)}%`;
     }
 
-    // Agrupar compras por día de la semana
+    // Agrupar compras por día de la semana (usando datos de la semana seleccionada)
+    const comprasSemana = this.filtrarPorSemana(compras);
     const comprasPorDia = [0, 0, 0, 0, 0, 0, 0];
-    compras.forEach(c => {
+    comprasSemana.forEach(c => {
       if (c.fecha) {
         const dia = new Date(c.fecha).getDay();
         comprasPorDia[dia === 0 ? 6 : dia - 1]++;
@@ -322,7 +465,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     // Agrupar compras por mes
     const comprasPorMes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    compras.forEach(c => {
+    comprasFiltradas.forEach(c => {
       if (c.fecha) {
         const mes = new Date(c.fecha).getMonth();
         comprasPorMes[mes]++;

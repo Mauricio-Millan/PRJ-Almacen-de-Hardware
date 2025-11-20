@@ -73,7 +73,45 @@
   <!-- Gráficos -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
     <div class="bg-white p-6 rounded-lg shadow-md">
-      <h3 class="text-lg font-semibold mb-4">Ventas y Compras por Día de la Semana</h3>
+      <!-- Encabezado con navegación de semanas -->
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h3 class="text-lg font-semibold">Ventas y Compras por Día de la Semana</h3>
+          <p class="text-sm text-gray-600 mt-1">{{ infoSemana }}</p>
+        </div>
+        <div class="flex gap-2">
+          <button 
+            type="button"
+            (click)="cambiarSemana(-1)"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-lg transition-colors"
+            title="Semana anterior"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+          <button 
+            type="button"
+            (click)="volverSemanaActual()"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+            [class.bg-indigo-800]="semanaActual === 0"
+            [disabled]="semanaActual === 0"
+            title="Semana actual"
+          >
+            Hoy
+          </button>
+          <button 
+            type="button"
+            (click)="cambiarSemana(1)"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-lg transition-colors"
+            title="Semana siguiente"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
       <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="barChartType"></canvas>
     </div>
     <div class="bg-white p-6 rounded-lg shadow-md">
