@@ -28,6 +28,16 @@ interface ItemVenta {
   subtotal: number;
 }
 
+interface UbigeoCiudad {
+  nombre: string;
+  distritos: string[];
+}
+
+interface UbigeoProvincia {
+  nombre: string;
+  ciudades: UbigeoCiudad[];
+}
+
 @Component({
   selector: 'app-ventas',
   imports: [CommonModule, FormsModule, DatePipe],
@@ -36,6 +46,52 @@ interface ItemVenta {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class VentasComponent implements OnInit {
+  readonly ubigeoPeru: UbigeoProvincia[] = [
+    {
+      nombre: 'Lima',
+      ciudades: [
+        {
+          nombre: 'Lima Metropolitana',
+          distritos: ['Miraflores', 'San Isidro', 'Santiago de Surco', 'La Molina', 'San Borja']
+        },
+        {
+          nombre: 'Huaral',
+          distritos: ['Huaral', 'Chancay', 'Aucallama']
+        },
+        {
+          nombre: 'Barranca',
+          distritos: ['Barranca', 'Paramonga', 'Supe']
+        }
+      ]
+    },
+    {
+      nombre: 'Arequipa',
+      ciudades: [
+        {
+          nombre: 'Arequipa',
+          distritos: ['Cercado', 'Cayma', 'Yanahuara', 'Sachaca']
+        },
+        {
+          nombre: 'Camaná',
+          distritos: ['Camaná', 'Ocoña', 'Quilca']
+        }
+      ]
+    },
+    {
+      nombre: 'Cusco',
+      ciudades: [
+        {
+          nombre: 'Cusco',
+          distritos: ['Cusco', 'San Jerónimo', 'San Sebastián', 'Wanchaq']
+        },
+        {
+          nombre: 'Urubamba',
+          distritos: ['Urubamba', 'Ollantaytambo', 'Machupicchu']
+        }
+      ]
+    }
+  ];
+
   ventas = signal<Venta[]>([]);
   clientes = signal<Cliente[]>([]);
   almacenes = signal<Almacen[]>([]);
@@ -61,6 +117,13 @@ export class VentasComponent implements OnInit {
   referencia = signal('');
   comentario = signal('');
   idAlmacenOrigen = signal<number | null>(null);
+  provinciaSeleccionada = signal('');
+  ciudadSeleccionada = signal('');
+  distritoSeleccionado = signal('');
+  codigoPostal = signal('');
+  direccion = signal('');
+  ciudadesDisponibles = signal<string[]>([]);
+  distritosDisponibles = signal<string[]>([]);
   
   // Items agregados a la venta
   itemsVenta = signal<ItemVenta[]>([]);
@@ -140,11 +203,19 @@ export class VentasComponent implements OnInit {
   resetearFormulario() {
     this.idCliente.set(null);
     this.referencia.set('');
+    this.provinciaSeleccionada.set('');
+    this.ciudadSeleccionada.set('');
+    this.distritoSeleccionado.set('');
+    this.codigoPostal.set('');
+    this.direccion.set('');
+    this.ciudadesDisponibles.set([]);
+    this.distritosDisponibles.set([]);
     this.comentario.set('');
     this.idAlmacenOrigen.set(null);
     this.itemsVenta.set([]);
     this.productosDisponibles.set([]);
     this.resetearItemTemporal();
+    this.actualizarComentarioDireccion();
   }
 
   // --- GESTIÓN DE LOTES/PRODUCTOS ---
@@ -205,6 +276,66 @@ export class VentasComponent implements OnInit {
     });
   }
 
+  onProvinciaChange(value: string) {
+    const provincia = value || '';
+    this.provinciaSeleccionada.set(provincia);
+    const provinciaInfo = this.ubigeoPeru.find(p => p.nombre === provincia);
+    const ciudades = provinciaInfo ? provinciaInfo.ciudades.map(c => c.nombre) : [];
+    this.ciudadesDisponibles.set(ciudades);
+    this.ciudadSeleccionada.set('');
+    this.distritoSeleccionado.set('');
+    this.distritosDisponibles.set([]);
+    this.actualizarComentarioDireccion();
+  }
+
+  onCiudadChange(value: string) {
+    const ciudad = value || '';
+    this.ciudadSeleccionada.set(ciudad);
+    const provinciaInfo = this.ubigeoPeru.find(p => p.nombre === this.provinciaSeleccionada());
+    const ciudadInfo = provinciaInfo?.ciudades.find(c => c.nombre === ciudad);
+    const distritos = ciudadInfo ? ciudadInfo.distritos : [];
+    this.distritosDisponibles.set(distritos);
+    this.distritoSeleccionado.set('');
+    this.actualizarComentarioDireccion();
+  }
+
+  onDistritoChange(value: string) {
+    this.distritoSeleccionado.set(value || '');
+    this.actualizarComentarioDireccion();
+  }
+
+  onCodigoPostalChange(value: string) {
+    const sanitized = (value || '').replace(/[^0-9]/g, '').slice(0, 5);
+    this.codigoPostal.set(sanitized);
+    this.actualizarComentarioDireccion();
+  }
+
+  onDireccionChange(value: string) {
+    this.direccion.set(value || '');
+    this.actualizarComentarioDireccion();
+  }
+
+  private actualizarComentarioDireccion(): void {
+    const partes: string[] = [];
+    if (this.provinciaSeleccionada()) {
+      partes.push(`Provincia: ${this.provinciaSeleccionada()}`);
+    }
+    if (this.ciudadSeleccionada()) {
+      partes.push(`Ciudad: ${this.ciudadSeleccionada()}`);
+    }
+    if (this.distritoSeleccionado()) {
+      partes.push(`Distrito: ${this.distritoSeleccionado()}`);
+    }
+    if (this.codigoPostal()) {
+      partes.push(`C.P.: ${this.codigoPostal()}`);
+    }
+    if (this.direccion().trim()) {
+      partes.push(`Dirección: ${this.direccion().trim()}`);
+    }
+
+    this.comentario.set(partes.join(' | '));
+  }
+
   buscarProductos() {
     const termino = this.busquedaProducto().toLowerCase();
     if (termino === '') {
@@ -239,6 +370,15 @@ export class VentasComponent implements OnInit {
       ...item,
       precioVenta
     }));
+  }
+
+  setReferenciaNumerica(valor: string) {
+    const soloNumeros = (valor || '').replace(/[^0-9]/g, '').slice(0, 8);
+    this.referencia.set(soloNumeros);
+  }
+
+  private obtenerReferenciaFactura(): string {
+    return this.referencia() ? `F${this.referencia()}` : '';
   }
 
   // Helper para obtener el ID de campos que pueden ser número u objeto
@@ -337,8 +477,8 @@ export class VentasComponent implements OnInit {
       return false;
     }
     
-    if (!this.referencia().trim()) {
-      alert('Debe ingresar una referencia');
+    if (!this.referencia()) {
+      alert('Debe ingresar la numeración de la factura');
       return false;
     }
     
@@ -351,12 +491,38 @@ export class VentasComponent implements OnInit {
       alert('Debe agregar al menos un producto a la venta');
       return false;
     }
+
+    if (!this.provinciaSeleccionada()) {
+      alert('Debe seleccionar una provincia del Perú');
+      return false;
+    }
+
+    if (!this.ciudadSeleccionada()) {
+      alert('Debe seleccionar una ciudad');
+      return false;
+    }
+
+    if (!this.distritoSeleccionado()) {
+      alert('Debe seleccionar un distrito');
+      return false;
+    }
+
+    if (!this.codigoPostal() || this.codigoPostal().length < 5) {
+      alert('Debe ingresar un código postal válido de 5 dígitos');
+      return false;
+    }
+
+    if (!this.direccion().trim()) {
+      alert('Debe ingresar la dirección de entrega');
+      return false;
+    }
     
     return true;
   }
 
   realizarVenta() {
     this.isSaving.set(true);
+    this.actualizarComentarioDireccion();
     
     // Obtener fecha actual en formato ISO
     const fechaActual = new Date().toISOString();
@@ -373,7 +539,7 @@ export class VentasComponent implements OnInit {
     // Construir la solicitud
     const request: MovimientoGenerarRequest = {
       fecha: fechaActual,
-      referencia: this.referencia(),
+      referencia: this.obtenerReferenciaFactura(),
       comentario: this.comentario(),
       idUsuario: this.authService.getCurrentUserId()!,
       idTipoAccion: 4, // 4 = VENTA
@@ -418,9 +584,17 @@ export class VentasComponent implements OnInit {
     this.modalDetalle.set(true);
     this.isLoadingDetalle.set(true);
 
-    this.movimientoLineasService.getMovimientoLineasByMovimiento(idMovimiento).subscribe({
-      next: (lineas) => {
+    forkJoin({
+      lineas: this.movimientoLineasService.getMovimientoLineasByMovimiento(idMovimiento),
+      movimiento: this.movimientosService.getMovimientoById(idMovimiento)
+    }).subscribe({
+      next: ({ lineas, movimiento }) => {
         this.detalleLineas.set(lineas);
+        this.ventaSeleccionada.set({
+          ...venta,
+          comentario: movimiento?.comentario || venta.comentario,
+          referencia: movimiento?.referencia || venta.referencia
+        });
         this.isLoadingDetalle.set(false);
       },
       error: (error) => {
@@ -445,87 +619,193 @@ export class VentasComponent implements OnInit {
     }, 0);
   }
 
+  calcularSubtotalSinIGV(): number {
+    const total = this.calcularTotalDetalle();
+    return parseFloat((total / 1.18).toFixed(2));
+  }
+
+  calcularIGV(): number {
+    const total = this.calcularTotalDetalle();
+    const subtotal = this.calcularSubtotalSinIGV();
+    return parseFloat((total - subtotal).toFixed(2));
+  }
+
   async exportarDetallePDF(): Promise<void> {
     if (!this.ventaSeleccionada()) return;
 
     try {
       const jspdfModule = await import('jspdf');
       const { jsPDF } = jspdfModule as any;
-      const pdf = new jsPDF();
+      const pdf = new jsPDF('p', 'mm', 'a4');
       
       const venta = this.ventaSeleccionada()!;
       const lineas = this.detalleLineas();
-      
-      // Título
-      pdf.setFontSize(18);
-      pdf.text('Detalle de Venta', 105, 15, { align: 'center' });
-      
-      // Información general
-      pdf.setFontSize(11);
-      let y = 30;
-      
-      pdf.text(`Venta #${venta.id}`, 20, y);
-      y += 7;
-      pdf.text(`Fecha: ${venta.fecha ? new Date(venta.fecha).toLocaleString('es-PE') : 'N/A'}`, 20, y);
-      y += 7;
-      pdf.text(`Cliente: ${this.obtenerNombreCliente(venta)}`, 20, y);
-      y += 7;
-      pdf.text(`Usuario: ${this.obtenerNombreUsuario(venta)}`, 20, y);
-      y += 7;
-      pdf.text(`Estado: ${venta.estado ? 'Activa' : 'Inactiva'}`, 20, y);
-      y += 15;
-      
-      // Encabezados de tabla
+      const margin = 15;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const usableWidth = pageWidth - (margin * 2);
+      let y = 18;
+
+      const fechaHuman = venta.fecha ? new Date(venta.fecha).toLocaleString('es-PE') : 'Fecha no disponible';
+      const direccionCliente = venta.comentario || 'Dirección no registrada';
+
+      // --- Encabezado de empresa ---
+      pdf.setFontSize(14);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text('Almacén de Hardware S.A.C.', margin, y);
       pdf.setFontSize(10);
-      pdf.setFont(undefined, 'bold');
-      pdf.text('Producto', 20, y);
-      pdf.text('Marca', 70, y);
-      pdf.text('Lote', 110, y);
-      pdf.text('Cant.', 140, y, { align: 'right' });
-      pdf.text('P. Unit.', 165, y, { align: 'right' });
-      pdf.text('Subtotal', 190, y, { align: 'right' });
-      y += 2;
-      
-      // Línea separadora
-      pdf.line(20, y, 190, y);
+      y += 6;
+      pdf.text('RUC 20609999999', margin, y);
       y += 5;
-      
-      // Detalle de líneas
+      pdf.text('Av. Tecnológica 456 - Lima, Perú', margin, y);
+      y += 5;
+      pdf.text('Tel: (01) 555-1234', margin, y);
+
+      pdf.setFontSize(12);
+      pdf.setTextColor(79, 70, 229);
+      pdf.text(`Factura: VEN-${venta.id}`, pageWidth - margin, 20, { align: 'right' });
+      pdf.setTextColor(31, 41, 55);
+      pdf.setFontSize(10);
+      pdf.text(`Emitida: ${fechaHuman}`, pageWidth - margin, 26, { align: 'right' });
+      pdf.text(`Usuario: ${this.obtenerNombreUsuario(venta)}`, pageWidth - margin, 32, { align: 'right' });
+
+      y += 12;
+      pdf.setDrawColor(226, 232, 240);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 10;
+
+      // --- Datos del cliente ---
+      pdf.setFontSize(11);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Datos del Cliente', margin, y);
       pdf.setFont(undefined, 'normal');
-      lineas.forEach(linea => {
-        if (y > 270) {
+      y += 6;
+      pdf.setFontSize(10);
+      pdf.text(`Cliente: ${this.obtenerNombreCliente(venta)}`, margin, y);
+      y += 5;
+      pdf.text(`Referencia: ${venta.referencia || 'Sin referencia'}`, margin, y);
+      y += 5;
+      const direccionLineas = pdf.splitTextToSize(`Dirección: ${direccionCliente}`, usableWidth);
+      direccionLineas.forEach((lineaDir: string) => {
+        pdf.text(lineaDir, margin, y);
+        y += 4;
+      });
+      y += 4;
+
+      // --- Tabla de detalle ---
+      const headerY = y;
+      const colHeaders = ['Cant.', 'Descripción', 'Marca', 'Lote', 'P. Unit.', 'Subtotal'];
+      const colWidths = [18, 62, 30, 22, 28, 30];
+
+      const dibujarEncabezado = (posY: number) => {
+        pdf.setFillColor(238, 242, 255);
+        pdf.setDrawColor(199, 210, 254);
+        pdf.rect(margin, posY - 6, usableWidth, 8, 'FD');
+        pdf.setFontSize(9);
+        pdf.setFont(undefined, 'bold');
+        let x = margin + 2;
+        colHeaders.forEach((header, index) => {
+          const colWidth = colWidths[index];
+          const align = index >= colHeaders.length - 2 ? 'right' : (index === 0 ? 'center' : 'left');
+          pdf.text(header, align === 'center' ? x + colWidth / 2 : x, posY, { align: align as any });
+          x += colWidth;
+        });
+        pdf.setFont(undefined, 'normal');
+      };
+
+      dibujarEncabezado(headerY);
+      y = headerY + 6;
+      pdf.setFontSize(9);
+
+      lineas.forEach((linea, idx) => {
+        if (y > 260) {
           pdf.addPage();
           y = 20;
+          dibujarEncabezado(y);
+          y += 6;
         }
-        
-        const producto = linea.idLote.idProducto.nombre || 'N/A';
-        const marca = linea.idLote.idProducto.idMarca.nombre || 'N/A';
-        const lote = linea.idLote.id.toString();
-        const cantidad = Math.abs(linea.cantidadDelta).toString();
-        const precioUnit = `S/ ${(linea.precioVenta || 0).toFixed(2)}`;
-        const subtotal = `S/ ${(Math.abs(linea.cantidadDelta) * (linea.precioVenta || 0)).toFixed(2)}`;
-        
-        pdf.text(producto.substring(0, 25), 20, y);
-        pdf.text(marca.substring(0, 20), 70, y);
-        pdf.text(lote.substring(0, 15), 110, y);
-        pdf.text(cantidad, 140, y, { align: 'right' });
-        pdf.text(precioUnit, 165, y, { align: 'right' });
-        pdf.text(subtotal, 190, y, { align: 'right' });
-        y += 7;
+
+        const cantidad = Math.abs(linea.cantidadDelta);
+        const producto = linea.idLote.idProducto.nombre || 'Producto';
+        const marca = linea.idLote.idProducto.idMarca.nombre || 'Marca';
+        const lote = `#${linea.idLote.id}`;
+        const precioUnit = (linea.precioVenta || 0).toFixed(2);
+        const subtotal = (cantidad * (linea.precioVenta || 0)).toFixed(2);
+
+        let x = margin + 2;
+        const rowValues = [
+          cantidad.toString(),
+          producto,
+          marca,
+          lote,
+          `S/ ${precioUnit}`,
+          `S/ ${subtotal}`
+        ];
+
+        rowValues.forEach((valor, index) => {
+          const colWidth = colWidths[index];
+          const align = index >= rowValues.length - 2 ? 'right' : (index === 0 ? 'center' : 'left');
+          const text = index === 1 ? valor : valor.substring(0, 25);
+          pdf.text(text, align === 'center' ? x + colWidth / 2 : x, y, { align: align as any });
+          x += colWidth;
+        });
+
+        y += 6;
+        if (idx < lineas.length - 1) {
+          pdf.setDrawColor(243, 244, 246);
+          pdf.line(margin, y - 4, pageWidth - margin, y - 4);
+        }
       });
-      
-      // Total
-      y += 3;
-      pdf.line(20, y, 190, y);
-      y += 7;
+
+      y += 10;
+      if (y > 250) {
+        pdf.addPage();
+        y = 20;
+      }
+
+      // --- Totales ---
+      const subtotal = this.calcularSubtotalSinIGV();
+      const igv = this.calcularIGV();
+      const total = this.calcularTotalDetalle();
+
+      pdf.setFontSize(10);
       pdf.setFont(undefined, 'bold');
-      pdf.setFontSize(12);
-      pdf.text('TOTAL VENTA:', 140, y, { align: 'right' });
-      pdf.text(`S/ ${this.calcularTotalDetalle().toFixed(2)}`, 190, y, { align: 'right' });
-      
+      pdf.text('Resumen de Pago', margin, y);
+      pdf.setFont(undefined, 'normal');
+      y += 6;
+
+      pdf.setFontSize(10);
+      const totalsX = pageWidth - margin;
+      const drawTotalLine = (label: string, value: number, bold = false) => {
+        pdf.setFont(undefined, bold ? 'bold' : 'normal');
+        pdf.text(label, totalsX - 60, y, { align: 'right' });
+        pdf.text(`S/ ${value.toFixed(2)}`, totalsX, y, { align: 'right' });
+        y += 6;
+      };
+
+      drawTotalLine('Base Imponible', subtotal);
+      drawTotalLine('IGV (18%)', igv);
+      drawTotalLine('Total a Pagar', total, true);
+
+      y += 4;
+      if (y > 250) {
+        pdf.addPage();
+        y = 20;
+      }
+
+      pdf.setFontSize(9);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Observaciones / Dirección de entrega', margin, y);
+      pdf.setFont(undefined, 'normal');
+      y += 5;
+      const obsLines = pdf.splitTextToSize(direccionCliente, usableWidth);
+      obsLines.forEach((lineObs: string) => {
+        pdf.text(lineObs, margin, y);
+        y += 4;
+      });
+
       // Guardar PDF
       const fecha = venta.fecha ? new Date(venta.fecha).toISOString().split('T')[0] : 'sin-fecha';
-      pdf.save(`venta-detalle-${venta.id}-${fecha}.pdf`);
+      pdf.save(`venta-factura-${venta.id}-${fecha}.pdf`);
       
     } catch (error) {
       console.error('Error al exportar PDF:', error);
