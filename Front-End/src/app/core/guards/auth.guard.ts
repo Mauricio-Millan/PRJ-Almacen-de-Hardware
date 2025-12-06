@@ -38,3 +38,26 @@ export const loginGuard: CanActivateFn = (route, state) => {
   router.navigate(['/dashboard']);
   return false;
 };
+
+/**
+ * Guard para restringir rutas según ID de rol
+ */
+export const roleRestrictionGuard: CanActivateFn = (route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  const disallowedRoles = route.data?.['disallowedRoles'] as number[] | undefined;
+
+  if (!disallowedRoles?.length) {
+    return true;
+  }
+
+  const currentRoleId = authService.getCurrentUserRoleId();
+
+  if (currentRoleId !== null && disallowedRoles.includes(currentRoleId)) {
+    console.warn('Acceso bloqueado por restricciones de rol. Ruta:', state.url);
+    router.navigate(['/dashboard']);
+    return false;
+  }
+
+  return true;
+};

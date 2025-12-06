@@ -109,7 +109,7 @@
                 (change)="idAlmacenOrigen.set($any($event.target).value ? +$any($event.target).value : null); onAlmacenOrigenChange()"
               >
                 <option [value]="null">Seleccione almacén origen</option>
-                @for (almacen of almacenes(); track almacen.id) {
+                @for (almacen of almacenesActivos(); track almacen.id) {
                   <option [value]="almacen.id">{{ almacen.nombre }}</option>
                 }
               </select>
@@ -132,7 +132,7 @@
                 (change)="idAlmacenDestino.set($any($event.target).value ? +$any($event.target).value : null)"
               >
                 <option [value]="null">Seleccione almacén destino</option>
-                @for (almacen of almacenes(); track almacen.id) {
+                @for (almacen of almacenesActivos(); track almacen.id) {
                   <option [value]="almacen.id" [disabled]="almacen.id === idAlmacenOrigen()">{{ almacen.nombre }}</option>
                 }
               </select>

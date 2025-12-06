@@ -12,6 +12,9 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class AdminLayoutComponent {
   isDropdownOpen = false;
+  private readonly restrictedRoleId = 2;
+  currentUserRoleId = computed(() => this.authService.currentUser()?.idRol?.id ?? null);
+  isRestrictedRole = computed(() => this.currentUserRoleId() === this.restrictedRoleId);
   
   // Computed para obtener información del usuario actual
   currentUserName = computed(() => this.authService.getCurrentUserName());

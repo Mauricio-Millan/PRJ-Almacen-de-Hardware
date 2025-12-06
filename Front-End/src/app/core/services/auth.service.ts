@@ -61,6 +61,13 @@ export class AuthService {
   }
 
   /**
+   * Obtiene el ID del rol del usuario actual
+   */
+  getCurrentUserRoleId(): number | null {
+    return this.currentUser()?.idRol?.id ?? null;
+  }
+
+  /**
    * Verifica si el usuario tiene un rol específico
    */
   hasRole(roleName: string): boolean {

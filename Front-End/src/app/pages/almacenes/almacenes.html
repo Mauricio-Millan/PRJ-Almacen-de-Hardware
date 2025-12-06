@@ -152,14 +152,72 @@
       </div>
 
       <!-- Dirección -->
-      <div class="mb-3">
-        <label class="block text-gray-700 font-medium">Dirección</label>
-        <input
-          type="text"
-          formControlName="direccion"
-          class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"
-          placeholder="Ingrese dirección"
-        />
+      <div class="mb-4">
+        <p class="text-gray-700 font-medium mb-2">Ubicación</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-700 text-sm font-medium">Departamento</label>
+            <input
+              type="text"
+              formControlName="departamento"
+              class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"
+              placeholder="Ej. Lima"
+            />
+            <p
+              *ngIf="almacenForm.get('departamento')?.invalid && almacenForm.get('departamento')?.touched"
+              class="text-red-500 text-sm mt-1"
+            >
+              El departamento es obligatorio.
+            </p>
+          </div>
+          <div>
+            <label class="block text-gray-700 text-sm font-medium">Ciudad</label>
+            <input
+              type="text"
+              formControlName="ciudad"
+              class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"
+              placeholder="Ej. Lima"
+            />
+            <p
+              *ngIf="almacenForm.get('ciudad')?.invalid && almacenForm.get('ciudad')?.touched"
+              class="text-red-500 text-sm mt-1"
+            >
+              La ciudad es obligatoria.
+            </p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="block text-gray-700 text-sm font-medium">Distrito</label>
+            <input
+              type="text"
+              formControlName="distrito"
+              class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"
+              placeholder="Ej. Miraflores"
+            />
+            <p
+              *ngIf="almacenForm.get('distrito')?.invalid && almacenForm.get('distrito')?.touched"
+              class="text-red-500 text-sm mt-1"
+            >
+              El distrito es obligatorio.
+            </p>
+          </div>
+          <div>
+            <label class="block text-gray-700 text-sm font-medium">Dirección exacta</label>
+            <input
+              type="text"
+              formControlName="direccionDetalle"
+              class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500"
+              placeholder="Av. Principal 123"
+            />
+            <p
+              *ngIf="almacenForm.get('direccionDetalle')?.invalid && almacenForm.get('direccionDetalle')?.touched"
+              class="text-red-500 text-sm mt-1"
+            >
+              La dirección es obligatoria.
+            </p>
+          </div>
+        </div>
       </div>
 
       <!-- Teléfono -->

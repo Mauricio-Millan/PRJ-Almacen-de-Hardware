@@ -14,6 +14,7 @@ import { Rol } from '../../core/models/rol';
 import { RolesService } from '../../core/services/rol';
 import { UsuarioaccionesService } from '../../core/services/usuarioaccionesservice';
 import { UsuarioAcciones } from '../../core/models/usuarioacciones';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-usuarios',
@@ -26,6 +27,9 @@ export class UsuariosComponent implements OnInit {
   usuarios: Usuario[] = [];
   filteredUsuarios: Usuario[] = [];
   roles: Rol[] = [];
+  private readonly restrictedRoleId = 2;
+  private isRestrictedUserView = false;
+  private currentUserId: number | null = null;
 
   usuarioForm!: FormGroup;
   selectedUsuario: Usuario | null = null;
@@ -54,10 +58,13 @@ export class UsuariosComponent implements OnInit {
     private usuariosService: UsuariosService,
     private rolesService: RolesService,
     private fb: FormBuilder,
-    private usuarioAccionesService: UsuarioaccionesService
+    private usuarioAccionesService: UsuarioaccionesService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.currentUserId = this.authService.getCurrentUserId();
+    this.isRestrictedUserView = this.authService.getCurrentUserRoleId() === this.restrictedRoleId;
     this.loadUsuarios();
     this.loadRoles();
     this.initForm();
@@ -122,6 +129,10 @@ export class UsuariosComponent implements OnInit {
 
       return coincideBusqueda && coincideEstado;
     });
+
+    if (this.isRestrictedUserView && this.currentUserId !== null) {
+      this.filteredUsuarios = this.filteredUsuarios.filter((u) => u.id === this.currentUserId);
+    }
 
     this.currentPage = 1;
   }

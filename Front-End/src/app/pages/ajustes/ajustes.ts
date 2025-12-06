@@ -67,6 +67,8 @@ export class Ajustes implements OnInit {
       sum + (item.tipo === 'incremento' ? item.cantidadAjuste : -item.cantidadAjuste), 0
     );
   });
+
+  almacenesActivos = computed(() => this.almacenes().filter(almacen => almacen.estado));
   
   // Loading states
   isLoading = signal(false);

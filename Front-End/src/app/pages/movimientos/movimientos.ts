@@ -65,6 +65,8 @@ export class Movimientos implements OnInit {
     const destino = this.idAlmacenDestino();
     return origen !== null && destino !== null && origen !== destino;
   });
+
+  almacenesActivos = computed(() => this.almacenes().filter(almacen => almacen.estado));
   
   // Loading states
   isLoading = signal(false);

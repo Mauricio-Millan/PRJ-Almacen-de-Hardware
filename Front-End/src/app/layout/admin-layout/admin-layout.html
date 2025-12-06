@@ -22,6 +22,7 @@
         <svg
           class="h-6 w-6"
           xmlns="http://www.w3.org/2000/svg"
+          *ngIf="!isRestrictedRole()"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -46,6 +47,7 @@
           viewBox="0 0 20 20"
         >
           <!-- Cube -->
+              *ngIf="!isRestrictedRole()"
           <path
             d="M10 2L2 7v6l8 5 8-5V7l-8-5zm0 2.18L16.74 7 10 11.82 3.26 7 10 4.18zM4 8.8L10 13.6l6-4.8V12l-6 3.75L4 12V8.8z"
           />
@@ -153,6 +155,7 @@
         routerLink="/compras"
         routerLinkActive="bg-indigo-600 text-white"
         class="flex items-center mt-4 px-4 py-2 mx-4 rounded-lg text-gray-700 hover:bg-indigo-500 hover:text-white transition-colors duration-200"
+        *ngIf="!isRestrictedRole()"
       >
         <svg
           class="h-6 w-6"
@@ -221,6 +224,7 @@
         routerLink="/ajustes"
         routerLinkActive="bg-indigo-600 text-white"
         class="flex items-center mt-4 px-4 py-2 mx-4 rounded-lg text-gray-700 hover:bg-indigo-500 hover:text-white transition-colors duration-200"
+        *ngIf="!isRestrictedRole()"
       >
         <svg
           class="h-6 w-6"

@@ -12,7 +12,7 @@ import { VentasComponent } from './pages/ventas/ventas';
 import { Movimientos } from './pages/movimientos/movimientos';
 import { Ajustes } from './pages/ajustes/ajustes';
 import { Login } from './pages/login/login';
-import { authGuard, loginGuard } from './core/guards/auth.guard';
+import { authGuard, loginGuard, roleRestrictionGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   // Ruta de login (pública)
@@ -35,10 +35,20 @@ export const routes: Routes = [
       { path: 'marcas', component: MarcasComponent },
       { path: 'productos', component: ProductosComponent },
       { path: 'clientes', component: ClientesComponent },
-      { path: 'compras', component: ComprasComponent },
+      {
+        path: 'compras',
+        component: ComprasComponent,
+        canActivate: [roleRestrictionGuard],
+        data: { disallowedRoles: [2] }
+      },
       { path: 'ventas', component: VentasComponent },
       { path: 'movimientos', component: Movimientos },
-      { path: 'ajustes', component: Ajustes },
+      {
+        path: 'ajustes',
+        component: Ajustes,
+        canActivate: [roleRestrictionGuard],
+        data: { disallowedRoles: [2] }
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

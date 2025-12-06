@@ -81,6 +81,10 @@ export class ComprasComponent implements OnInit {
   totalCompra = computed(() => {
     return this.itemsCompra().reduce((sum, item) => sum + item.subtotal, 0);
   });
+
+  proveedoresActivos = computed(() => this.proveedores().filter(proveedor => proveedor.estado));
+
+  almacenesActivos = computed(() => this.almacenes().filter(almacen => almacen.estado));
   
   // Loading states
   isLoading = signal(false);

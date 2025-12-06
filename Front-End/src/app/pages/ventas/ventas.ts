@@ -143,6 +143,10 @@ export class VentasComponent implements OnInit {
   totalVenta = computed(() => {
     return this.itemsVenta().reduce((sum, item) => sum + item.subtotal, 0);
   });
+
+  clientesActivos = computed(() => this.clientes().filter(cliente => cliente.estado));
+
+  almacenesActivos = computed(() => this.almacenes().filter(almacen => almacen.estado));
   
   // Loading states
   isLoading = signal(false);

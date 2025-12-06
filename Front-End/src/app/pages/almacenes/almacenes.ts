@@ -7,6 +7,13 @@ import { Almacenes } from '../../core/services/almacenes';
 import { AlmacendetalleService } from '../../core/services/almacendetalleservice';
 import { AlmacenDetalle, ProductoDetalle } from '../../core/models/almacendetalle';
 
+interface DireccionFormFields {
+  departamento: string;
+  ciudad: string;
+  distrito: string;
+  direccionDetalle: string;
+}
+
 @Component({
   selector: 'app-almacenes',
   standalone: true,
@@ -57,7 +64,10 @@ export class AlmacenesComponent implements OnInit {
   private initForm(): void {
     this.almacenForm = this.fb.group({
       nombre: ['', [Validators.required, Validators.minLength(3)]],
-      direccion: [''],
+      departamento: ['', Validators.required],
+      ciudad: ['', Validators.required],
+      distrito: ['', Validators.required],
+      direccionDetalle: ['', [Validators.required, Validators.minLength(5)]],
       telefono: [
         '',
         [
@@ -123,12 +133,21 @@ export class AlmacenesComponent implements OnInit {
     if (almacen) {
       this.isEditMode = true;
       this.selectedAlmacen = { ...almacen };
-      this.almacenForm.patchValue(almacen);
+      const direccionParts = this.parseDireccion(almacen.direccion);
+      this.almacenForm.patchValue({
+        nombre: almacen.nombre,
+        telefono: almacen.telefono || '',
+        estado: almacen.estado,
+        ...direccionParts,
+      });
     } else {
       this.isEditMode = false;
       this.selectedAlmacen = null;
       this.almacenForm.reset({
-        estado: true
+        nombre: '',
+        telefono: '',
+        estado: true,
+        ...this.getDireccionDefaults(),
       });
     }
     this.showModal = true;
@@ -138,7 +157,12 @@ export class AlmacenesComponent implements OnInit {
   closeModal(): void {
     this.showModal = false;
     this.selectedAlmacen = null;
-    this.almacenForm.reset();
+    this.almacenForm.reset({
+      nombre: '',
+      telefono: '',
+      estado: true,
+      ...this.getDireccionDefaults(),
+    });
   }
 
   /** Crear o editar almacén */
@@ -148,7 +172,25 @@ export class AlmacenesComponent implements OnInit {
       return;
     }
 
-    const almacenData: Almacen = this.almacenForm.value;
+    const formValue = this.almacenForm.value;
+    const direccion = this.composeDireccion({
+      departamento: formValue.departamento,
+      ciudad: formValue.ciudad,
+      distrito: formValue.distrito,
+      direccionDetalle: formValue.direccionDetalle,
+    });
+
+    const nombre = (formValue.nombre ?? '').trim();
+
+    const almacenData: Almacen = {
+      nombre,
+      direccion,
+      estado: formValue.estado,
+    };
+
+    if (formValue.telefono?.trim()) {
+      almacenData.telefono = formValue.telefono.trim();
+    }
     this.loading = true;
 
     const request$ =
@@ -281,5 +323,70 @@ export class AlmacenesComponent implements OnInit {
     if (this.selectedAlmacen?.id) {
       this.loadAlmacenDetalle(this.selectedAlmacen.id);
     }
+  }
+
+  private getDireccionDefaults(): DireccionFormFields {
+    return {
+      departamento: '',
+      ciudad: '',
+      distrito: '',
+      direccionDetalle: '',
+    };
+  }
+
+  private normalizeLabel(label?: string): string {
+    return label
+      ? label
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+      : '';
+  }
+
+  private parseDireccion(direccion?: string): DireccionFormFields {
+    const result = this.getDireccionDefaults();
+    if (!direccion) {
+      return result;
+    }
+
+    const segments = direccion
+      .split('|')
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+
+    segments.forEach((segment) => {
+      const [label, ...valueParts] = segment.split(':');
+      const value = valueParts.join(':').trim();
+      const normalizedLabel = this.normalizeLabel(label);
+
+      if (normalizedLabel.includes('departamento')) {
+        result.departamento = value;
+      } else if (normalizedLabel.includes('ciudad')) {
+        result.ciudad = value;
+      } else if (normalizedLabel.includes('distrito')) {
+        result.distrito = value;
+      } else if (normalizedLabel.includes('direccion')) {
+        result.direccionDetalle = value;
+      }
+    });
+
+    if (!result.direccionDetalle) {
+      result.direccionDetalle = direccion.trim();
+    }
+
+    return result;
+  }
+
+  private composeDireccion(fields: DireccionFormFields): string {
+    const { departamento, ciudad, distrito, direccionDetalle } = fields;
+    const segments = [
+      departamento?.trim() ? `Departamento: ${departamento.trim()}` : '',
+      ciudad?.trim() ? `Ciudad: ${ciudad.trim()}` : '',
+      distrito?.trim() ? `Distrito: ${distrito.trim()}` : '',
+      direccionDetalle?.trim() ? `Direccion: ${direccionDetalle.trim()}` : '',
+    ].filter(Boolean);
+
+    return segments.join(' | ').trim();
   }
 }

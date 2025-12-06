@@ -107,7 +107,7 @@
                 (change)="idProveedor.set($any($event.target).value ? +$any($event.target).value : null)"
               >
                 <option [value]="null">Seleccione un proveedor</option>
-                @for (proveedor of proveedores(); track proveedor.id) {
+                @for (proveedor of proveedoresActivos(); track proveedor.id) {
                   <option [value]="proveedor.id">{{ proveedor.nombre }} - {{ proveedor.ruc }}</option>
                 }
               </select>
@@ -121,7 +121,7 @@
                 (change)="idAlmacenDestino.set($any($event.target).value ? +$any($event.target).value : null)"
               >
                 <option [value]="null">Seleccione un almacén</option>
-                @for (almacen of almacenes(); track almacen.id) {
+                @for (almacen of almacenesActivos(); track almacen.id) {
                   <option [value]="almacen.id">{{ almacen.nombre }}</option>
                 }
               </select>

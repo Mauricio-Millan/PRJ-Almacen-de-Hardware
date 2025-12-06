@@ -112,7 +112,7 @@
                 (change)="idCliente.set($any($event.target).value ? +$any($event.target).value : null)"
               >
                 <option [value]="null">Seleccione un cliente</option>
-                @for (cliente of clientes(); track cliente.id) {
+                @for (cliente of clientesActivos(); track cliente.id) {
                   <option [value]="cliente.id">{{ cliente.nombre }}</option>
                 }
               </select>
@@ -126,7 +126,7 @@
                 (change)="idAlmacenOrigen.set($any($event.target).value ? +$any($event.target).value : null); onAlmacenChange()"
               >
                 <option [value]="null">Seleccione un almacén</option>
-                @for (almacen of almacenes(); track almacen.id) {
+                @for (almacen of almacenesActivos(); track almacen.id) {
                   <option [value]="almacen.id">{{ almacen.nombre }}</option>
                 }
               </select>
